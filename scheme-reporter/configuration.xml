@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<configuration>
+    <jdbc>
+        <driverClass>org.postgresql.Driver</driverClass>
+    </jdbc>
+
+    <database>
+        <url>jdbc:postgresql://localhost:5432/guidemon</url>
+        <user>postgres</user>
+        <password>1234</password>
+        <includes>.*</includes>
+        <excludes>schema_version|jettysessions|jettysessionids</excludes>
+        <inputSchema>public</inputSchema>
+    </database>
+
+    <generator>
+        <outputDirectory>doc</outputDirectory>
+        <jspTemplate>scheme-reporter/src/main/resources/asset/default.jsp</jspTemplate>
+    </generator>
+</configuration>

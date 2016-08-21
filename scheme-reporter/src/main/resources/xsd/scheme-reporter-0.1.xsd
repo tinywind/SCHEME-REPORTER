@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns:tns="https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/scheme-reporter/src/main/resources/xsd/scheme-reporter-0.1.xsd"
+        xmlns="http://www.w3.org/2001/XMLSchema"
+        targetNamespace="https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/scheme-reporter/src/main/resources/xsd/scheme-reporter-0.1.xsd"
+        elementFormDefault="qualified">
+
+    <element name="configuration">
+        <complexType>
+            <all>
+                <element name="jdbc" type="tns:Jdbc"/>
+                <element name="database" type="tns:Database"/>
+                <element name="generator" type="tns:Generator"/>
+            </all>
+        </complexType>
+    </element>
+
+    <complexType name="Jdbc">
+        <all>
+            <element name="driverClass" type="string"/>
+        </all>
+    </complexType>
+
+    <complexType name="Database">
+        <all>
+            <element name="url" type="string"/>
+            <element name="user" type="string"/>
+            <element name="password" type="string"/>
+            <element name="includes" type="string" default="" minOccurs="0" maxOccurs="1"/>
+            <element name="excludes" type="string" default="" minOccurs="0" maxOccurs="1"/>
+            <element name="inputSchema" type="string" default="" minOccurs="0" maxOccurs="1"/>
+        </all>
+    </complexType>
+
+    <complexType name="Generator">
+        <all>
+            <element name="jspTemplate" type="string" default="" minOccurs="0" maxOccurs="1"/>
+            <element name="outputDirectory" type="string" default="" minOccurs="0" maxOccurs="1"/>
+        </all>
+    </complexType>
+</schema>

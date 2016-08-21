@@ -16,18 +16,19 @@
  */
 package org.tinywind.schemereporter.maven;
 
-import org.tinywind.schemereporter.SchemeReporter;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.tinywind.schemereporter.SchemeReporter;
+import org.tinywind.schemereporter.jaxb.Configuration;
+import org.tinywind.schemereporter.jaxb.Database;
+import org.tinywind.schemereporter.jaxb.Generator;
+import org.tinywind.schemereporter.jaxb.Jdbc;
 
-import javax.script.ScriptException;
 import javax.xml.bind.JAXB;
-import java.io.IOException;
 import java.io.StringWriter;
-import java.util.List;
 
 import static org.apache.maven.plugins.annotations.LifecyclePhase.GENERATE_SOURCES;
 import static org.apache.maven.plugins.annotations.ResolutionScope.TEST;
@@ -49,10 +50,37 @@ public class Plugin extends AbstractMojo {
     @Parameter
     private boolean skip;
 
+    @Parameter
+    private Jdbc jdbc;
+    @Parameter
+    private Database database;
+    @Parameter
+    private Generator generator;
+
     @Override
     public void execute() throws MojoExecutionException {
         if (skip) {
             getLog().info("Skip SCHEME-REPORTER");
+            return;
+        }
+
+        final Configuration configuration = new Configuration();
+        configuration.setJdbc(jdbc);
+        configuration.setDatabase(database);
+        configuration.setGenerator(generator);
+
+        final StringWriter writer = new StringWriter();
+        JAXB.marshal(configuration, writer);
+
+        getLog().debug("Using this configuration:\n" + writer.toString());
+
+        try {
+            SchemeReporter.generate(configuration);
+        } catch (Exception e) {
+            e.printStackTrace();
+            getLog().error(e.getMessage());
+            if (e.getCause() != null)
+                getLog().error("  Cause: " + e.getCause().getMessage());
             return;
         }
 
