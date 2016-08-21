@@ -19,6 +19,7 @@ package org.tinywind.schemereporter;
 import org.jooq.tools.JooqLogger;
 import org.jooq.tools.jdbc.JDBCUtils;
 import org.jooq.util.Databases;
+import org.jooq.util.jaxb.EnumType;
 import org.jooq.util.jaxb.Schema;
 import org.tinywind.schemereporter.html.HtmlReporter;
 import org.tinywind.schemereporter.jaxb.Configuration;
@@ -178,6 +179,7 @@ public class SchemeReporter {
         log.info("----------------------------------------------------------");
         log.info("----------------------------------------------------------");
 
+        database.setConfiguredEnumTypes(new ArrayList<>());
         new HtmlReporter(database, configuration.getGenerator()).generate(database);
     }
 

@@ -1,7 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="database" type="org.jooq.util.Database"--%>
 <%--@elvariable id="enums" type="java.util.List<org.jooq.util.EnumDefinition>"--%>
 <%--@elvariable id="sequences" type="java.util.List<org.jooq.util.SequenceDefinition>"--%>
 <%--@elvariable id="tables" type="java.util.List<org.jooq.util.TableDefinition>"--%>
