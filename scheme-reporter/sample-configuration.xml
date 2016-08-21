@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-
 <configuration>
     <jdbc>
         <driverClass>org.postgresql.Driver</driverClass>
@@ -11,11 +10,11 @@
         <password>1234</password>
         <includes>.*</includes>
         <excludes>schema_version|jettysessions|jettysessionids</excludes>
-        <inputSchema>public</inputSchema>
+        <inputSchema>information_schema</inputSchema>
     </database>
 
     <generator>
         <outputDirectory>doc</outputDirectory>
-        <jspTemplate>scheme-reporter/src/main/resources/asset/default.jsp</jspTemplate>
+        <!--<jspTemplate>scheme-reporter/src/main/resources/asset/default.jsp</jspTemplate>-->
     </generator>
 </configuration>
