@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns:tns="https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/scheme-reporter/src/main/resources/xsd/scheme-reporter-0.1.xsd"
+        xmlns:jaxb="http://java.sun.com/xml/ns/jaxb"
+        xmlns="http://www.w3.org/2001/XMLSchema"
+        targetNamespace="https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/scheme-reporter/src/main/resources/xsd/scheme-reporter-0.1.xsd"
+        elementFormDefault="qualified">
+
+    <element name="configuration">
+    </element>
+</schema>
