@@ -44,7 +44,7 @@ create reporter from remote database
 ```
 
 #Run
-mvn org.tinywind:scheme-reporter-maven:0.1:generate
+mvn scheme-reporter-maven:generate
 
 #Output(sample)
 https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.html
