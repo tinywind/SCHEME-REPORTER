@@ -19,7 +19,7 @@
 
     <licenses>
         <license>
-            <name>The MIT License (MIT)</name>
+            <name>Licensed under the Apache License, Version 2.0</name>
             <url>https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/LICENSE.txt</url>
             <distribution>repo</distribution>
         </license>

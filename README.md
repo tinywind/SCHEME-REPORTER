@@ -2,4 +2,4 @@
 create reporter from remote database
 
 # LICENSE
-**The MIT License (MIT)**
+**Licensed under the Apache License, Version 2.0**
