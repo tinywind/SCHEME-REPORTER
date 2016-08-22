@@ -51,3 +51,5 @@ https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.
 
 #LICENSE
 **Licensed under the Apache License, Version 2.0**
+
+If use on commercial databases, refer `http://www.jooq.org/legal/licensing`
