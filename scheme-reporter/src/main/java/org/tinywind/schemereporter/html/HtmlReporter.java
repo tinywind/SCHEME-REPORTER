@@ -17,6 +17,7 @@
 package org.tinywind.schemereporter.html;
 
 import guru.nidi.graphviz.attribute.Color;
+import guru.nidi.graphviz.attribute.RankDir;
 import guru.nidi.graphviz.attribute.Shape;
 import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.model.Graph;
@@ -160,7 +161,8 @@ public class HtmlReporter {
 
     private String totalRelationSvg(List<TableDefinition> tables) {
         final Map<String, Node> nodeMap = tables.stream().collect(Collectors.toMap(Definition::getName, table -> createReferNode(table.getName())));
-        final Graph g = graph("totalRelationSvg").directed();
+        final Graph g = graph("totalRelationSvg").directed()
+                .general().attr(RankDir.LEFT_TO_RIGHT);
 
         final List<Pair<String, String>> linkedList = new ArrayList<>();
         tables.forEach(table -> table.getColumns().forEach(column -> column.getForeignKeys().forEach(fkey -> {

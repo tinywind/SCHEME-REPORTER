@@ -25,7 +25,7 @@
             <element name="url" type="string"/>
             <element name="user" type="string"/>
             <element name="password" type="string"/>
-            <element name="includes" type="string" default="" minOccurs="0" maxOccurs="1"/>
+            <element name="includes" type="string" default=".*" minOccurs="0" maxOccurs="1"/>
             <element name="excludes" type="string" default="" minOccurs="0" maxOccurs="1"/>
             <element name="inputSchema" type="string" default="" minOccurs="0" maxOccurs="1"/>
         </all>
