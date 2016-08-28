@@ -199,7 +199,7 @@ public class SchemeReporter {
         }
     }
 
-    private static Configuration load(InputStream in) throws IOException {
+    public static Configuration load(InputStream in) throws IOException {
         final byte[] buffer = new byte[1000 * 1000];
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         for (int len; (len = in.read(buffer)) >= 0; )

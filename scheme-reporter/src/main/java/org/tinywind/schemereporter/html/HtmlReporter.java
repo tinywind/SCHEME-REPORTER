@@ -16,20 +16,16 @@
  */
 package org.tinywind.schemereporter.html;
 
-import guru.nidi.graphviz.attribute.Color;
-import guru.nidi.graphviz.attribute.RankDir;
-import guru.nidi.graphviz.attribute.Shape;
-import guru.nidi.graphviz.engine.Graphviz;
-import guru.nidi.graphviz.model.Graph;
-import guru.nidi.graphviz.model.Node;
-import javafx.util.Pair;
 import org.apache.jasper.JspC;
 import org.apache.jasper.compiler.JspUtil;
 import org.apache.jasper.runtime.HttpJspBase;
 import org.apache.tools.ant.util.FileUtils;
 import org.jooq.tools.JooqLogger;
 import org.jooq.tools.StringUtils;
-import org.jooq.util.*;
+import org.jooq.util.Database;
+import org.jooq.util.SchemaDefinition;
+import org.jooq.util.SchemaVersionProvider;
+import org.jooq.util.TableDefinition;
 import org.tinywind.schemereporter.Reportable;
 import org.tinywind.schemereporter.jaxb.Generator;
 
@@ -40,14 +36,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
-import static guru.nidi.graphviz.model.Factory.graph;
-import static guru.nidi.graphviz.model.Factory.node;
+import static org.tinywind.schemereporter.util.TableImage.relationSvg;
+import static org.tinywind.schemereporter.util.TableImage.totalRelationSvg;
 
 public class HtmlReporter implements Reportable {
     private static final JooqLogger log = JooqLogger.getLogger(HtmlReporter.class);
@@ -137,63 +129,6 @@ public class HtmlReporter implements Reportable {
         final String jspClassName = (StringUtils.isEmpty(JSP_PACKAGE_NAME) ? "" : JSP_PACKAGE_NAME + ".") + getServletClassName(templateFile.getName());
         final Class<?> klass = Class.forName(jspClassName, true, jspClassLoader);
         return (HttpJspBase) klass.getConstructor().newInstance();
-    }
-
-    private Node createNode(String name) {
-        return node(name).attr(Shape.RECTANGLE).attr(Color.BLACK)
-                .attr("fontname", "Helvetica").attr("fontsize", 10).attr("fontcolor", "black")
-                .attr("height", 0.2).attr("width", 0.4).attr("style", "filled");
-    }
-
-    private Node createReferNode(String name) {
-        return createNode(name).attr("fillcolor", "white").attr("URL", "#table$" + name);
-    }
-
-    private Map<String, String> relationSvg(List<TableDefinition> tables) {
-        final Map<String, String> relationSvg = new HashMap<>();
-        for (TableDefinition table : tables) {
-            final String cTable = table.getName();
-            final Node[] cNode = {createNode(cTable).attr("weight", 8).attr("fillcolor", "grey75")};
-
-            final Map<String, Node> refer = new HashMap<>();
-            final Map<String, Node> referred = new HashMap<>();
-
-            table.getColumns().forEach(column -> {
-                column.getForeignKeys().forEach(fkey -> {
-                    final String rTable = fkey.getReferencedTable().getName();
-                    refer.putIfAbsent(rTable, createReferNode(rTable));
-                });
-                column.getUniqueKeys().forEach(ukey -> ukey.getForeignKeys().forEach(fkey -> {
-                    final String rTable = fkey.getKeyTable().getName();
-                    if (referred.get(rTable) == null && !cTable.equals(rTable))
-                        referred.put(rTable, createReferNode(rTable).link(cNode[0]));
-                }));
-            });
-
-            refer.values().stream().distinct().forEach(rNode -> cNode[0] = cNode[0].link(rNode));
-            final Graph g = graph(cTable).directed().node(cNode[0]);
-            referred.values().stream().distinct().forEach(g::node);
-
-            relationSvg.put(cTable, Graphviz.fromGraph(g).createSvg());
-        }
-        return relationSvg;
-    }
-
-    private String totalRelationSvg(List<TableDefinition> tables) {
-        final Map<String, Node> nodeMap = tables.stream().collect(Collectors.toMap(Definition::getName, table -> createReferNode(table.getName())));
-        final Graph g = graph("totalRelationSvg").directed()
-                .general().attr(RankDir.LEFT_TO_RIGHT);
-
-        final List<Pair<String, String>> linkedList = new ArrayList<>();
-        tables.forEach(table -> table.getColumns().forEach(column -> column.getForeignKeys().forEach(fkey -> {
-            if (linkedList.contains(new Pair<>(table.getName(), fkey.getReferencedTable().getName()))) return;
-            final Node linked = nodeMap.get(fkey.getReferencedTable().getName());
-            nodeMap.put(table.getName(), nodeMap.get(table.getName()).link(linked));
-            linkedList.add(new Pair<>(table.getName(), fkey.getReferencedTable().getName()));
-        })));
-
-        nodeMap.forEach((name, node) -> g.node(node));
-        return Graphviz.fromGraph(g).createSvg();
     }
 
     private File jspCompile(String filePath, String packageName, String outputDir) {

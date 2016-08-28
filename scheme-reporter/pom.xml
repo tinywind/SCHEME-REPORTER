@@ -28,6 +28,20 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>9.4-1200-jdbc41</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.12</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>guru.nidi</groupId>
             <artifactId>graphviz-java</artifactId>
             <version>0.0.1</version>
