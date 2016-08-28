@@ -33,7 +33,8 @@
 
     <complexType name="Generator">
         <all>
-            <element name="jspTemplate" type="string" default="" minOccurs="0" maxOccurs="1"/>
+            <element name="reporterClass" type="string" default="org.tinywind.schemereporter.html.HtmlReporter" minOccurs="0" maxOccurs="1"/>
+            <element name="template" type="string" default="" minOccurs="0" maxOccurs="1"/>
             <element name="outputDirectory" type="string" default="" minOccurs="0" maxOccurs="1"/>
         </all>
     </complexType>

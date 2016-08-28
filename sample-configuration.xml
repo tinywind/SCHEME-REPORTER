@@ -10,11 +10,13 @@
         <password>1234</password>
         <includes>.*</includes>
         <excludes>schema_version|jettysessions|jettysessionids</excludes>
-        <inputSchema>information_schema</inputSchema>
+        <inputSchema>public</inputSchema>
     </database>
 
     <generator>
+        <!--<reporterClass>org.tinywind.schemereporter.pdf.PdfReporter</reporterClass>-->
+        <!--<reporterClass>org.tinywind.schemereporter.html.HtmlReporter</reporterClass>-->
+        <!--<template>scheme-reporter/src/main/resources/asset/default.jsp</template>-->
         <outputDirectory>doc</outputDirectory>
-        <!--<jspTemplate>scheme-reporter/src/main/resources/asset/default.jsp</jspTemplate>-->
     </generator>
 </configuration>

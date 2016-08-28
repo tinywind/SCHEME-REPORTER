@@ -30,6 +30,7 @@ import org.apache.tools.ant.util.FileUtils;
 import org.jooq.tools.JooqLogger;
 import org.jooq.tools.StringUtils;
 import org.jooq.util.*;
+import org.tinywind.schemereporter.Reportable;
 import org.tinywind.schemereporter.jaxb.Generator;
 
 import javax.servlet.http.HttpServletRequest;
@@ -48,7 +49,7 @@ import java.util.stream.Collectors;
 import static guru.nidi.graphviz.model.Factory.graph;
 import static guru.nidi.graphviz.model.Factory.node;
 
-public class HtmlReporter {
+public class HtmlReporter implements Reportable {
     private static final JooqLogger log = JooqLogger.getLogger(HtmlReporter.class);
 
     static {
@@ -57,40 +58,25 @@ public class HtmlReporter {
 
     private Database database;
     private Generator generator;
+    private HttpJspBase jsp;
 
-    public HtmlReporter(Database database, Generator generator) {
+    @Override
+    public void setDatabase(Database database) {
         this.database = database;
+    }
+
+    @Override
+    public void setGenerator(Generator generator) {
         this.generator = generator;
-    }
-
-    private HttpJspBase getCompiledJspBase(File jspTemplateFile, File tempDir) throws IOException, NoSuchMethodException, ClassNotFoundException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        final String JSP_PACKAGE_NAME = "_compiled";
-
-        final File compiledJspClassFile = jspCompile(jspTemplateFile.getPath(), JSP_PACKAGE_NAME, tempDir.getAbsolutePath());
-        if (!compiledJspClassFile.exists()) {
-            throw new RuntimeException("failed: JspCompile");
-        }
-
-        final URLClassLoader jspClassLoader = new URLClassLoader(new URL[]{tempDir.toURI().toURL()}, this.getClass().getClassLoader());
-        final String jspClassName = (StringUtils.isEmpty(JSP_PACKAGE_NAME) ? "" : JSP_PACKAGE_NAME + ".") + getServletClassName(jspTemplateFile.getName());
-        final Class<?> klass = Class.forName(jspClassName, true, jspClassLoader);
-        return (HttpJspBase) klass.getConstructor().newInstance();
-    }
-
-    public final void generate(Database database) {
-        this.database = database;
-        this.database.setIncludeRelations(true);
-
-        final HttpJspBase jsp;
         try {
-            final String jspTemplate = generator.getJspTemplate();
+            final String template = generator.getTemplate();
             final File tempDir = Files.createTempDirectory("scheme-reporter").toFile();
             final File tempFile = Files.createTempFile(tempDir.toPath(), "template", ".jsp").toFile();
             final FileWriter writer = new FileWriter(tempFile);
             final char[] buffer = new char[1024 * 1024];
-            final InputStreamReader reader = StringUtils.isEmpty(jspTemplate)
+            final InputStreamReader reader = StringUtils.isEmpty(template)
                     ? new InputStreamReader(getClass().getClassLoader().getResourceAsStream("asset/default.jsp"))
-                    : new FileReader(jspTemplate);
+                    : new FileReader(template);
             int read;
             while ((read = reader.read(buffer)) >= 0)
                 writer.write(buffer, 0, read);
@@ -109,14 +95,48 @@ public class HtmlReporter {
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
+    }
 
-        for (SchemaDefinition schema : database.getSchemata()) {
-            try {
-                generate(schema, jsp);
-            } catch (Exception e) {
-                throw new RuntimeException("Error generating code for schema " + schema, e);
-            }
+    @Override
+    public void generate(SchemaDefinition schema) throws Exception {
+        final SchemaVersionProvider schemaVersionProvider = schema.getDatabase().getSchemaVersionProvider();
+        final String version = schemaVersionProvider != null ? schemaVersionProvider.version(schema) : null;
+        final File file = new File(generator.getOutputDirectory(), schema.getName() + (!StringUtils.isEmpty(version) ? "-" + version : "") + ".html");
+
+        log.info("output file: " + file);
+        final File path = file.getParentFile();
+        if (path != null)
+            path.mkdirs();
+
+        final HttpServletRequest request = new SimpleServletRequest();
+        final HttpServletResponse response = new SimpleServletResponse(file, "utf-8");
+
+        final List<TableDefinition> tables = database.getTables(schema);
+        request.setAttribute("totalRelationSvg", totalRelationSvg(tables));
+        request.setAttribute("relationSvg", relationSvg(tables));
+        request.setAttribute("database", database);
+        request.setAttribute("enums", database.getEnums(schema));
+        request.setAttribute("sequences", database.getSequences(schema));
+        request.setAttribute("tables", tables);
+
+        jsp.init(new SimpleServletConfig());
+        jsp.service(request, response);
+        response.getWriter().flush();
+        response.getWriter().close();
+    }
+
+    private HttpJspBase getCompiledJspBase(File templateFile, File tempDir) throws IOException, NoSuchMethodException, ClassNotFoundException, IllegalAccessException, InvocationTargetException, InstantiationException {
+        final String JSP_PACKAGE_NAME = "_compiled";
+
+        final File compiledJspClassFile = jspCompile(templateFile.getPath(), JSP_PACKAGE_NAME, tempDir.getAbsolutePath());
+        if (!compiledJspClassFile.exists()) {
+            throw new RuntimeException("failed: JspCompile");
         }
+
+        final URLClassLoader jspClassLoader = new URLClassLoader(new URL[]{tempDir.toURI().toURL()}, this.getClass().getClassLoader());
+        final String jspClassName = (StringUtils.isEmpty(JSP_PACKAGE_NAME) ? "" : JSP_PACKAGE_NAME + ".") + getServletClassName(templateFile.getName());
+        final Class<?> klass = Class.forName(jspClassName, true, jspClassLoader);
+        return (HttpJspBase) klass.getConstructor().newInstance();
     }
 
     private Node createNode(String name) {
@@ -174,33 +194,6 @@ public class HtmlReporter {
 
         nodeMap.forEach((name, node) -> g.node(node));
         return Graphviz.fromGraph(g).createSvg();
-    }
-
-    private void generate(SchemaDefinition schema, HttpJspBase jsp) throws Exception {
-        final SchemaVersionProvider schemaVersionProvider = schema.getDatabase().getSchemaVersionProvider();
-        final String version = schemaVersionProvider != null ? schemaVersionProvider.version(schema) : null;
-        final File file = new File(generator.getOutputDirectory(), schema.getName() + (!StringUtils.isEmpty(version) ? "-" + version : "") + ".html");
-
-        log.info("output file: " + file);
-        final File path = file.getParentFile();
-        if (path != null)
-            path.mkdirs();
-
-        final HttpServletRequest request = new SimpleServletRequest();
-        final HttpServletResponse response = new SimpleServletResponse(file, "utf-8");
-
-        final List<TableDefinition> tables = database.getTables(schema);
-        request.setAttribute("totalRelationSvg", totalRelationSvg(tables));
-        request.setAttribute("relationSvg", relationSvg(tables));
-        request.setAttribute("database", database);
-        request.setAttribute("enums", database.getEnums(schema));
-        request.setAttribute("sequences", database.getSequences(schema));
-        request.setAttribute("tables", tables);
-
-        jsp.init(new SimpleServletConfig());
-        jsp.service(request, response);
-        response.getWriter().flush();
-        response.getWriter().close();
     }
 
     private File jspCompile(String filePath, String packageName, String outputDir) {

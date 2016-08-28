@@ -19,9 +19,8 @@ package org.tinywind.schemereporter;
 import org.jooq.tools.JooqLogger;
 import org.jooq.tools.jdbc.JDBCUtils;
 import org.jooq.util.Databases;
-import org.jooq.util.jaxb.EnumType;
+import org.jooq.util.SchemaDefinition;
 import org.jooq.util.jaxb.Schema;
-import org.tinywind.schemereporter.html.HtmlReporter;
 import org.tinywind.schemereporter.jaxb.Configuration;
 import org.tinywind.schemereporter.jaxb.Database;
 import org.tinywind.schemereporter.jaxb.Generator;
@@ -126,8 +125,9 @@ public class SchemeReporter {
             configuration.setGenerator(new Generator());
 
         final Generator generator = configuration.getGenerator();
+        setDefault(generator, "reporterClass");
         setDefault(generator, "outputDirectory");
-        setDefault(generator, "jspTemplate");
+        setDefault(generator, "template");
 
         if (configuration.getDatabase() == null)
             configuration.setDatabase(new Database());
@@ -149,6 +149,7 @@ public class SchemeReporter {
             e.printStackTrace();
         }
 
+        @SuppressWarnings("unchecked")
         final Class<? extends Driver> driverClass = (Class<? extends Driver>) Class.forName(configuration.getJdbc().getDriverClass());
         final Properties properties = new Properties();
         final Database databaseConfig = configuration.getDatabase();
@@ -180,7 +181,22 @@ public class SchemeReporter {
         log.info("----------------------------------------------------------");
 
         database.setConfiguredEnumTypes(new ArrayList<>());
-        new HtmlReporter(database, configuration.getGenerator()).generate(database);
+        database.setIncludeRelations(true);
+
+        final Generator generator = configuration.getGenerator();
+        @SuppressWarnings("unchecked")
+        final Class<? extends Reportable> reporterClass = (Class<? extends Reportable>) Class.forName(generator.getReporterClass());
+        final Reportable reporter = reporterClass.getConstructor().newInstance();
+        reporter.setDatabase(database);
+        reporter.setGenerator(generator);
+
+        for (SchemaDefinition schemaDefinition : database.getSchemata()) {
+            try {
+                reporter.generate(schemaDefinition);
+            } catch (Exception e) {
+                throw new RuntimeException("Error generating code for schema " + schemaDefinition, e);
+            }
+        }
     }
 
     private static Configuration load(InputStream in) throws IOException {
