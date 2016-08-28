@@ -16,6 +16,7 @@
  */
 package org.tinywind.schemereporter.pdf;
 
+import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.color.Color;
 import com.itextpdf.kernel.color.DeviceRgb;
 import com.itextpdf.kernel.geom.PageSize;
@@ -29,15 +30,20 @@ import com.itextpdf.layout.border.SolidBorder;
 import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.property.TabAlignment;
 import com.itextpdf.layout.property.TextAlignment;
+import org.apache.batik.transcoder.TranscoderException;
+import org.apache.batik.transcoder.TranscoderInput;
+import org.apache.batik.transcoder.TranscoderOutput;
+import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.jooq.tools.JooqLogger;
 import org.jooq.tools.StringUtils;
 import org.jooq.util.*;
 import org.tinywind.schemereporter.Reportable;
 import org.tinywind.schemereporter.jaxb.Generator;
+import org.tinywind.schemereporter.util.TableImage;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class PdfReporter implements Reportable {
@@ -71,28 +77,45 @@ public class PdfReporter implements Reportable {
         if (path != null)
             path.mkdirs();
 
+        final List<EnumDefinition> enums = database.getEnums(schema);
+        final List<TableDefinition> tables = database.getTables(schema);
+        final String totalRelationSvg = TableImage.totalRelationSvg(tables);
+        final Map<String, String> relationSvg = TableImage.relationSvg(tables);
+
+        final PageSize PAGE_SIZE = PageSize.A4;
+        final float PAGE_MARGIN = 30;
+        final float MAX_WIDTH = PAGE_SIZE.getWidth() - 2 * PAGE_MARGIN;
+        final float MAX_HEIGHT = PAGE_SIZE.getHeight() - 2 * PAGE_MARGIN;
+        final float svgScaleRate = 0.6f;
+
         final PdfDocument pdf = new PdfDocument(new PdfWriter(new FileOutputStream(file)));
-        final Document document = new Document(pdf, PageSize.A4);
-        document.setMargins(20, 20, 20, 20);
+        final Document document = new Document(pdf, PAGE_SIZE);
+        document.setMargins(PAGE_MARGIN, PAGE_MARGIN, PAGE_MARGIN, PAGE_MARGIN);
 
         document.add(new Paragraph(new Text("Table of contents").setFontSize(14).setBold()).setTextAlignment(TextAlignment.CENTER));
         document.add(itemOfTableContents("Enum Definition", "Enum Definition"));
-        for (Definition e : database.getEnums(schema))
+        for (Definition e : enums)
             document.add(leafItemOfTableContents(e.getName(), "enum$" + e.getName()));
 
         document.add(itemOfTableContents("Table Definition", "Table Definition"));
-        for (Definition e : database.getTables(schema))
+        for (Definition e : tables)
             document.add(leafItemOfTableContents(e.getName(), "table$" + e.getName()));
         document.add(new AreaBreak());
 
         final Div divEnums = chapter("Enum Definition");
-        final Div divTables = chapter("Table Definition");
-
-        for (EnumDefinition e : database.getEnums(schema))
+        for (EnumDefinition e : enums)
             divEnums.add(enumElement(e));
 
-        for (TableDefinition e : database.getTables(schema)) {
+        final Div divTables = chapter("Table Definition");
+        divTables.add(new Paragraph()
+                .add(createImage(totalRelationSvg, svgScaleRate, MAX_WIDTH, MAX_HEIGHT))
+                .setTextAlignment(TextAlignment.CENTER));
+
+        for (TableDefinition e : tables) {
             final Div div = tableTitle(e)
+                    .add(new Paragraph()
+                            .add(createImage(relationSvg.get(e.getName()), svgScaleRate, MAX_WIDTH, MAX_HEIGHT))
+                            .setTextAlignment(TextAlignment.CENTER))
                     .add(tableDefinition(e))
                     .add(tableUniqueKey(e));
             if (e.getColumns().stream().filter(c -> c.getComment() != null).count() > 0)
@@ -105,6 +128,45 @@ public class PdfReporter implements Reportable {
         document.add(divTables);
 
         document.close();
+    }
+
+    private byte[] pngBytesFromSvg(String svg) throws TranscoderException {
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        final TranscoderInput input = new TranscoderInput(new StringReader(svg));
+        final TranscoderOutput output = new TranscoderOutput(outputStream);
+        final PNGTranscoder converter = new PNGTranscoder();
+        converter.transcode(input, output);
+        byte[] bytes = outputStream.toByteArray();
+        try {
+            outputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bytes;
+    }
+
+    private Image createImage(String svg, float svgScaleRate, float maxWidth, float maxHeight) throws TranscoderException {
+        final Image img = new Image(ImageDataFactory.createPng(pngBytesFromSvg(svg)));
+        final float width = img.getImageScaledWidth();
+        final float height = img.getImageScaledHeight();
+        final float scaleRate;
+        if (width / maxWidth > height / maxHeight) {
+            if (width < maxWidth) {
+                scaleRate = svgScaleRate;
+            } else {
+                final float rate = (width / maxWidth);
+                scaleRate = rate > svgScaleRate ? svgScaleRate : rate;
+            }
+        } else {
+            if (height < maxHeight) {
+                scaleRate = svgScaleRate;
+            } else {
+                final float rate = (height / maxHeight);
+                scaleRate = rate > svgScaleRate ? svgScaleRate : rate;
+            }
+        }
+        img.scale(scaleRate, scaleRate);
+        return img;
     }
 
     private Div chapter(String title) throws IOException {

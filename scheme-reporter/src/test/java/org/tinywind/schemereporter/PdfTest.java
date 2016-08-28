@@ -56,8 +56,8 @@ public class PdfTest {
             e.printStackTrace();
             assert false;
         } finally {
-//            new File("doc/public.html").delete();
-//            new File("doc/public.pdf").delete();
+            new File("doc/public.html").delete();
+            new File("doc/public.pdf").delete();
         }
     }
 }
