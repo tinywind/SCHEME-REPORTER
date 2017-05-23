@@ -1,18 +1,18 @@
-/**
- * Copyright (c) 2016, Jeon JaeHyeong (http://github.com/tinywind)
- * All rights reserved.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+/*
+  Copyright (c) 2016, Jeon JaeHyeong (http://github.com/tinywind)
+  All rights reserved.
+  <p>
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
+  <p>
+  http://www.apache.org/licenses/LICENSE-2.0
+  <p>
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
  */
 package org.tinywind.schemereporter.pdf;
 
@@ -53,7 +53,7 @@ public class PdfReporter implements Reportable {
     private Color lightGrey = new DeviceRgb(0xF5, 0xF5, 0xF5);
     private Color darkBlue = new DeviceRgb(0x00, 0x00, 0x60);
 
-    public PdfReporter() throws IOException {
+    public PdfReporter() {
     }
 
     @Override
@@ -169,7 +169,7 @@ public class PdfReporter implements Reportable {
         return img;
     }
 
-    private Div chapter(String title) throws IOException {
+    private Div chapter(String title) {
         final Div div = new Div()
                 .setDestination(title);
 
@@ -289,9 +289,9 @@ public class PdfReporter implements Reportable {
             final boolean presentBottom = i + 1 < e.getUniqueKeys().size();
             final UniqueKeyDefinition ukey = e.getUniqueKeys().get(i);
             table.addCell(cell(ukey.getName(), presentBottom).setDestination("key$" + ukey.getName()));
-            String text = "";
-            for (ColumnDefinition column : ukey.getKeyColumns()) text += column.getName() + " ";
-            table.addCell(cell(text, presentBottom));
+            StringBuilder text = new StringBuilder();
+            for (ColumnDefinition column : ukey.getKeyColumns()) text.append(column.getName()).append(" ");
+            table.addCell(cell(text.toString(), presentBottom));
             table.addCell(cell(ukey.getComment() != null ? ukey.getComment() : "", presentBottom));
         }
 
@@ -315,12 +315,12 @@ public class PdfReporter implements Reportable {
 
     private void putKeyDescriptions(Div div, java.util.List<ForeignKeyDefinition> foreignKeys, boolean referenced) {
         for (ForeignKeyDefinition fkey : foreignKeys) {
-            String text = "[" + (referenced ? fkey.getReferencedTable().getName() : fkey.getKeyTable().getName()) + "]";
+            StringBuilder text = new StringBuilder("[" + (referenced ? fkey.getReferencedTable().getName() : fkey.getKeyTable().getName()) + "]");
             if (referenced)
-                for (ColumnDefinition column : fkey.getReferencedColumns()) text += " " + column.getName();
+                for (ColumnDefinition column : fkey.getReferencedColumns()) text.append(" ").append(column.getName());
             else
-                for (ColumnDefinition column : fkey.getKeyColumns()) text += " " + column.getName();
-            final Paragraph paragraph = new Paragraph(text);
+                for (ColumnDefinition column : fkey.getKeyColumns()) text.append(" ").append(column.getName());
+            final Paragraph paragraph = new Paragraph(text.toString());
             div.add(referenced
                     ? paragraph.setItalic().setFontColor(darkBlue)
                     .setAction(PdfAction.createGoTo("key$" + fkey.getReferencedKey().getName()))
@@ -343,9 +343,10 @@ public class PdfReporter implements Reportable {
             title.add(textComment);
         }
 
-        String string = "";
-        for (int i = 0; i < literals.size(); i++) string += literals.get(i) + (i + 1 < literals.size() ? ", " : "");
-        final Paragraph elements = new Paragraph(string).setFontSize(10);
+        StringBuilder string = new StringBuilder();
+        for (int i = 0; i < literals.size(); i++)
+            string.append(literals.get(i)).append(i + 1 < literals.size() ? ", " : "");
+        final Paragraph elements = new Paragraph(string.toString()).setFontSize(10);
 
         final Table table = new Table(1)
                 .setWidthPercent(100);
