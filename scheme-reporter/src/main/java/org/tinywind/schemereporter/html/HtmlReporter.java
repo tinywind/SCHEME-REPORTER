@@ -36,12 +36,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.tinywind.schemereporter.util.TableImage.relationSvg;
 import static org.tinywind.schemereporter.util.TableImage.totalRelationSvg;
 
-public class HtmlReporter implements Reportable {
+public class HtmlReporter implements Reportable, Closeable {
     private static final JooqLogger log = JooqLogger.getLogger(HtmlReporter.class);
 
     static {
@@ -51,6 +52,8 @@ public class HtmlReporter implements Reportable {
     private Database database;
     private Generator generator;
     private HttpJspBase jsp;
+
+    private File tempDir;
 
     @Override
     public void setDatabase(Database database) {
@@ -62,8 +65,16 @@ public class HtmlReporter implements Reportable {
         this.generator = generator;
         try {
             final String template = generator.getTemplate();
-            final File tempDir = Files.createTempDirectory("scheme-reporter").toFile();
+            tempDir = Files.createTempDirectory("scheme-reporter").toFile();
+
+            if (!valid(tempDir)) {
+                log.warn("invalid System.getProperty(\"java.io.tmpdir\"): " + System.getProperty("java.io.tmpdir"));
+                tempDir = new File("scheme-reporter" + System.nanoTime()).getAbsoluteFile();
+                tempDir.mkdirs();
+            }
+
             final File tempFile = Files.createTempFile(tempDir.toPath(), "template", ".jsp").toFile();
+
             final FileWriter writer = new FileWriter(tempFile);
             final char[] buffer = new char[1024 * 1024];
             final InputStreamReader reader = StringUtils.isEmpty(template)
@@ -117,6 +128,44 @@ public class HtmlReporter implements Reportable {
         response.getWriter().close();
     }
 
+    /**
+     * If file path is valid, return true.
+     * <br/>
+     * found invalid path from <s>System.getProperty("java.io.tmpdir")</s>
+     * <dl>
+     * <dt>C:\Users\ADMINI~1\AppData\Local\Temp\</dt>
+     * <dd>is invalid</dd>
+     * <dt>C:\Users\Administrator\AppData\Local\Temp\</dt>
+     * <dd>is valid</dd>
+     * </dl>
+     */
+    private boolean valid(File file) {
+        String[] paths = file.getAbsolutePath().replaceAll("\\\\", "/").split("/");
+
+        if (paths.length == 0)
+            return true;
+
+        File root = new File(File.separator + paths[0] + File.separator);
+
+        return valid(root, Arrays.copyOfRange(paths, 1, paths.length));
+    }
+
+    private boolean valid(File dir, String[] paths) {
+        if (paths.length == 0)
+            return true;
+
+        File[] listFiles = dir.listFiles();
+
+        if (listFiles == null)
+            return false;
+
+        for (File file : listFiles)
+            if (file.getName().equalsIgnoreCase(paths[0]))
+                return valid(file, Arrays.copyOfRange(paths, 1, paths.length));
+
+        return false;
+    }
+
     private HttpJspBase getCompiledJspBase(File templateFile, File tempDir) throws IOException, NoSuchMethodException, ClassNotFoundException, IllegalAccessException, InvocationTargetException, InstantiationException {
         final String JSP_PACKAGE_NAME = "_compiled";
 
@@ -164,10 +213,10 @@ public class HtmlReporter implements Reportable {
 
     private String getServletClassName(String jspUri) {
         jspUri = jspUri.replaceAll("\\\\", "/");
-        String result = "";
+        StringBuilder result = new StringBuilder();
 
         for (int index = jspUri.indexOf("/", 0), last = 0; index >= 0; index = jspUri.indexOf("/", index + 1)) {
-            result += index == 0 ? "" : JspUtil.makeJavaIdentifier(jspUri.substring(last, index)) + ".";
+            result.append(index == 0 ? "" : JspUtil.makeJavaIdentifier(jspUri.substring(last, index)) + ".");
             last = index + 1;
         }
 
@@ -178,5 +227,10 @@ public class HtmlReporter implements Reportable {
         int iSep = fileName.lastIndexOf(47) + 1;
 
         return result + JspUtil.makeJavaIdentifier(fileName.substring(iSep));
+    }
+
+    @Override
+    public void close() throws IOException {
+        org.apache.commons.io.FileUtils.deleteDirectory(tempDir);
     }
 }

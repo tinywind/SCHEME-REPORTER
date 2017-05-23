@@ -149,8 +149,7 @@ public class SchemeReporter {
             e.printStackTrace();
         }
 
-        @SuppressWarnings("unchecked")
-        final Class<? extends Driver> driverClass = (Class<? extends Driver>) Class.forName(configuration.getJdbc().getDriverClass());
+        @SuppressWarnings("unchecked") final Class<? extends Driver> driverClass = (Class<? extends Driver>) Class.forName(configuration.getJdbc().getDriverClass());
         final Properties properties = new Properties();
         final Database databaseConfig = configuration.getDatabase();
         properties.put("user", databaseConfig.getUser());
@@ -184,8 +183,7 @@ public class SchemeReporter {
         database.setIncludeRelations(true);
 
         final Generator generator = configuration.getGenerator();
-        @SuppressWarnings("unchecked")
-        final Class<? extends Reportable> reporterClass = (Class<? extends Reportable>) Class.forName(generator.getReporterClass());
+        @SuppressWarnings("unchecked") final Class<? extends Reportable> reporterClass = (Class<? extends Reportable>) Class.forName(generator.getReporterClass());
         final Reportable reporter = reporterClass.getConstructor().newInstance();
         reporter.setDatabase(database);
         reporter.setGenerator(generator);
@@ -197,6 +195,9 @@ public class SchemeReporter {
                 throw new RuntimeException("Error generating code for schema " + schemaDefinition, e);
             }
         }
+
+        if (reporter instanceof Closeable)
+            ((Closeable) reporter).close();
     }
 
     public static Configuration load(InputStream in) throws IOException {
