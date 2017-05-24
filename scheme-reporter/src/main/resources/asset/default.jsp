@@ -16,10 +16,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta name="viewport" content="">
     <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"/>
-    <link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.11.4/jquery-ui.min.css"/>
-    <script src="https://code.jquery.com/jquery-2.2.0.min.js"></script>
-    <script src="https://code.jquery.com/ui/1.11.4/jquery-ui.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
     <style type="text/css">
         .element-in-set:after {
             content: ', ';
@@ -40,27 +37,29 @@
 </head>
 <body>
 <div class="container">
-    <a name="EnumDefinition"></a>
-    <h3> Enum Definition </h3>
-    <c:forEach var="enumElement" items="${enums}" varStatus="status">
-        <a name="enum$${enumElement.name}"></a>
-        <div class="panel panel-default">
-            <div class="panel-heading">
-                <h4>${enumElement.name}<small><i>${enumElement.comment}</i></small></h4>
+    <c:if test="${enums.size() > 0}">
+        <a name="EnumDefinition"></a>
+        <h3> Enum Definition </h3>
+        <c:forEach var="enumElement" items="${enums}" varStatus="status">
+            <a name="enum$${enumElement.name}"></a>
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4>${enumElement.name}<small><i>${enumElement.comment}</i></small></h4>
+                </div>
+                <table class="table table-condensed" style="table-layout: fixed;">
+                    <tbody>
+                    <tr>
+                        <td>
+                            <c:forEach var="literal" items="${enumElement.literals}">
+                                <span class="element-in-set">${literal}</span>
+                            </c:forEach>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
-            <table class="table table-condensed" style="table-layout: fixed;">
-                <tbody>
-                <tr>
-                    <td>
-                        <c:forEach var="literal" items="${enumElement.literals}">
-                            <span class="element-in-set">${literal}</span>
-                        </c:forEach>
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-    </c:forEach>
+        </c:forEach>
+    </c:if>
 
     <a name="TableDefinition"></a>
     <h3> Table Definition </h3>
@@ -141,61 +140,68 @@
                 </c:forEach>
                 </tbody>
             </table>
-            <table class="table table-condensed" style="table-layout: fixed;">
-                <colgroup>
-                    <col style="width: 20%"/>
-                    <col style="width: 30%"/>
-                    <col style="width: 50%"/>
-                </colgroup>
-                <thead>
-                <tr class="info">
-                    <th>unique key</th>
-                    <th>columns</th>
-                    <th>description</th>
-                </tr>
-                </thead>
-                <tbody>
-                <c:forEach var="ukey" items="${tableElement.uniqueKeys}">
-                    <tr>
-                        <td class="text-ellipsis" title="${ukey.name}">${ukey.name}<a name="key$${ukey.name}"></a></td>
-                        <td><c:forEach var="e" items="${ukey.keyColumns}"><span class="element-in-set">${e.name}</span></c:forEach></td>
-                        <td>${ukey.comment}</td>
+            <c:if test="${tableElement.uniqueKeys.size() > 0}">
+                <table class="table table-condensed" style="table-layout: fixed;">
+                    <colgroup>
+                        <col style="width: 20%"/>
+                        <col style="width: 30%"/>
+                        <col style="width: 50%"/>
+                    </colgroup>
+                    <thead>
+                    <tr class="info">
+                        <th>unique key</th>
+                        <th>columns</th>
+                        <th>description</th>
                     </tr>
-                </c:forEach>
-                </tbody>
-            </table>
-            <table class="table table-condensed" style="table-layout: fixed;">
-                <colgroup>
-                    <col style="width: 20%"/>
-                    <col style="width: 80%"/>
-                </colgroup>
-
-                <thead>
-                <tr class="info">
-                    <th>column</th>
-                    <th>description</th>
-                </tr>
-                </thead>
-                <tbody>
-                <c:forEach var="column" items="${tableElement.columns}">
-                    <c:if test="${column.comment != null && column.comment.length() > 0 }">
+                    </thead>
+                    <tbody>
+                    <c:forEach var="ukey" items="${tableElement.uniqueKeys}">
                         <tr>
-                            <td class="text-ellipsis" title="${column.name}">${column.name}</td>
-                            <td>${column.comment}</td>
+                            <td class="text-ellipsis" title="${ukey.name}">${ukey.name}<a name="key$${ukey.name}"></a></td>
+                            <td><c:forEach var="e" items="${ukey.keyColumns}"><span class="element-in-set">${e.name}</span></c:forEach></td>
+                            <td>${ukey.comment}</td>
                         </tr>
-                    </c:if>
-                </c:forEach>
-                </tbody>
-            </table>
+                    </c:forEach>
+                    </tbody>
+                </table>
+            </c:if>
+            <c:if test="${tableElement.columns.stream().filter(e -> e.comment != null && e.comment.length() > 0).count() > 0}">
+                <table class="table table-condensed" style="table-layout: fixed;">
+                    <colgroup>
+                        <col style="width: 20%"/>
+                        <col style="width: 80%"/>
+                    </colgroup>
+
+                    <thead>
+                    <tr class="info">
+                        <th>column</th>
+                        <th>description</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <c:forEach var="column" items="${tableElement.columns}">
+                        <c:if test="${column.comment != null && column.comment.length() > 0 }">
+                            <tr>
+                                <td class="text-ellipsis" title="${column.name}">${column.name}</td>
+                                <td>${column.comment}</td>
+                            </tr>
+                        </c:if>
+                    </c:forEach>
+                    </tbody>
+                </table>
+            </c:if>
         </div>
     </c:forEach>
 </div>
 
 <script type="text/javascript">
-    $(document).ready(function () {
-        $('svg > g > polygon').attr('fill', 'transparent');
-        $('table').filter(function () { return $(this).find('tbody').find('tr').length <= 0; }).remove();
-    });
+    var svgs = document.querySelectorAll('svg');
+    for (var i = 0; i < svgs.length; i++)
+        svgs[i].style.maxWidth = '100%';
+
+	var polygons = document.querySelectorAll('svg > g > polygon');
+    for (i = 0; i < polygons.length; i++)
+        polygons[i].setAttribute('fill', 'transparent');
 </script>
 </body>
 </html>
