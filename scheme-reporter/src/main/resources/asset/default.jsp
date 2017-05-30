@@ -18,21 +18,11 @@
     <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"/>
 
     <style type="text/css">
-        .element-in-set:after {
-            content: ', ';
-        }
-        .element-in-set:last-of-type:after {
-            content: '';
-        }
-        .text-ellipsis {
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            overflow: hidden;
-            width: 100%;
-        }
-        .svg-container svg {
-            width: 100%;
-        }
+        .element-in-set:after { content: ', '; }
+        .element-in-set:last-of-type:after { content: ''; }
+        .text-ellipsis { text-overflow: ellipsis; white-space: nowrap; overflow: hidden; width: 100%; }
+        svg { width: 100%; }
+        svg > g > polygon { fill: transparent; }
     </style>
 </head>
 <body>
@@ -193,15 +183,5 @@
         </div>
     </c:forEach>
 </div>
-
-<script type="text/javascript">
-    var svgs = document.querySelectorAll('svg');
-    for (var i = 0; i < svgs.length; i++)
-        svgs[i].style.maxWidth = '100%';
-
-	var polygons = document.querySelectorAll('svg > g > polygon');
-    for (i = 0; i < polygons.length; i++)
-        polygons[i].setAttribute('fill', 'transparent');
-</script>
 </body>
 </html>
