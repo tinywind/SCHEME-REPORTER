@@ -100,7 +100,7 @@ public class SchemeReporter {
         return false;
     }
 
-    private static boolean isCorrected(Configuration configuration) {
+    public static boolean isCorrected(Configuration configuration) {
         final Jdbc jdbc = configuration.getJdbc();
         final Database database = configuration.getDatabase();
         if (isNull(jdbc, database))
@@ -138,7 +138,12 @@ public class SchemeReporter {
         setDefault(database, "inputSchema");
     }
 
+    @SuppressWarnings("unchecked")
     public static void generate(Configuration configuration) throws Exception {
+        generate(configuration, config -> (Class<? extends Driver>) Class.forName(config.getJdbc().getDriverClass()));
+    }
+
+    public static void generate(Configuration configuration, JdbcClassExtractor jdbcClassExtractor) throws Exception {
         if (!isCorrected(configuration)) {
             log.error("Incorrect xml");
             return;
@@ -149,7 +154,7 @@ public class SchemeReporter {
             e.printStackTrace();
         }
 
-        @SuppressWarnings("unchecked") final Class<? extends Driver> driverClass = (Class<? extends Driver>) Class.forName(configuration.getJdbc().getDriverClass());
+        final Class<? extends Driver> driverClass = jdbcClassExtractor.extract(configuration);
         final Properties properties = new Properties();
         final Database databaseConfig = configuration.getDatabase();
         properties.put("user", databaseConfig.getUser());

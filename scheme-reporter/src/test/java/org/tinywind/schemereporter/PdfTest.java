@@ -18,23 +18,24 @@ package org.tinywind.schemereporter;
 
 import org.apache.tools.ant.filters.StringInputStream;
 import org.junit.Test;
+import org.tinywind.schemereporter.sample.Creator;
 
 import java.io.File;
+import java.sql.SQLException;
 
 public class PdfTest {
     private final String header = "" +
             "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" +
             "<configuration>" +
             "    <jdbc>" +
-            "        <driverClass>org.postgresql.Driver</driverClass>" +
+            "        <driverClass>org.h2.Driver</driverClass>" +
             "    </jdbc>" +
             "    <database>" +
-            "        <url>jdbc:postgresql://localhost:5432/keycloak</url>" +
-            "        <user>postgres</user>" +
-            "        <password>1234</password>" +
+            "        <url>jdbc:h2:tcp://localhost:9092/mem:test;DB_CLOSE_DELAY=-1</url>" +
+            "        <user>sa</user>" +
+            "        <password></password>" +
             "        <includes>.*</includes>" +
-            "        <excludes>schema_version|jettysessions|jettysessionids</excludes>" +
-            "        <inputSchema>public</inputSchema>" +
+            "        <inputSchema>PUBLIC</inputSchema>" +
             "    </database>" +
             "    <generator>";
     private final String tail = "" +
@@ -46,7 +47,9 @@ public class PdfTest {
     private final String htmlConfig = header + "<reporterClass>org.tinywind.schemereporter.html.HtmlReporter</reporterClass>" + tail;
 
     @Test
-    public void test() {
+    public void test() throws SQLException {
+        Creator.create();
+
         try {
             SchemeReporter.generate(SchemeReporter.load(new StringInputStream(htmlConfig)));
             assert new File("doc/public.html").exists();

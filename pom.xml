@@ -6,7 +6,7 @@
 
     <groupId>org.tinywind</groupId>
     <artifactId>scheme-reporter-parent</artifactId>
-    <version>0.3.1</version>
+    <version>0.3.2</version>
     <packaging>pom</packaging>
 
     <name>SCHEME-REPORTER Parent</name>
@@ -67,6 +67,12 @@
         <dependencies>
             <dependency>
                 <groupId>org.tinywind</groupId>
+                <artifactId>scheme-reporter-sample-database</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.tinywind</groupId>
                 <artifactId>scheme-reporter</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -76,6 +82,12 @@
                 <artifactId>scheme-reporter-maven</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.tinywind</groupId>
+                <artifactId>scheme-reporter-standalone</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -83,6 +95,14 @@
         <java.version>1.8</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.25</version>
+        </dependency>
+    </dependencies>
 
     <build>
         <finalName>${project.artifactId}-${project.version}</finalName>
@@ -135,8 +155,10 @@
     </build>
 
     <modules>
+        <module>scheme-reporter-sample-database</module>
         <module>scheme-reporter</module>
         <module>scheme-reporter-maven</module>
+        <module>scheme-reporter-standalone</module>
     </modules>
 
     <profiles>

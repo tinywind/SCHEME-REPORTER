@@ -16,15 +16,15 @@ create reporter from remote database
                 </executions>
                 <configuration>
                     <jdbc>
-                        <driverClass>org.postgresql.Driver</driverClass>
+                        <driverClass>org.h2.Driver</driverClass>
                     </jdbc>
                     <database>
-                        <url>jdbc:postgresql://localhost:5432/guidemon</url>
-                        <user>postgres</user>
-                        <password>1234</password>
+                        <url>jdbc:h2:tcp://localhost:9092/mem:test;DB_CLOSE_DELAY=-1</url>
+                        <user>sa</user>
+                        <password></password>
                         <includes>.*</includes>
                         <excludes>schema_version|jettysessions|jettysessionids</excludes>
-                        <inputSchema>information_schema</inputSchema>
+                        <inputSchema>PUBLIC</inputSchema>
                     </database>                
                     <generator>
                         <!--<reporterClass>org.tinywind.schemereporter.pdf.PdfReporter</reporterClass>-->
@@ -34,9 +34,9 @@ create reporter from remote database
                 </configuration>
                 <dependencies>
                     <dependency>
-                        <groupId>org.postgresql</groupId>
-                        <artifactId>postgresql</artifactId>
-                        <version>9.4-1200-jdbc41</version>
+                        <groupId>com.h2database</groupId>
+                        <artifactId>h2</artifactId>
+                        <version>1.4.196</version>
                     </dependency>
                 </dependencies>
             </plugin>
