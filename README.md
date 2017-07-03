@@ -1,7 +1,7 @@
-#SCHEME-REPORTER
+# SCHEME-REPORTER
 create reporter from remote database
 
-#Configure Maven
+# Configure Maven
 ```
     <build>
         <plugins>
@@ -44,16 +44,16 @@ create reporter from remote database
     </build>
 ```
 
-#Run
+# Run
 mvn scheme-reporter-maven:generate
 
-#Output(sample)
+# Output(sample)
 https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.html
 
 https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.pdf
 
 
-#LICENSE
+# LICENSE
 **Licensed under the Apache License, Version 2.0**
 
 If use on commercial databases, refer `http://www.jooq.org/legal/licensing`
