@@ -22,7 +22,7 @@
     </licenses>
 
     <properties>
-        <jooq.version>3.8.0</jooq.version>
+        <jooq.version>3.9.3</jooq.version>
         <jetty.version>9.3.7.v20160115</jetty.version>
     </properties>
 

@@ -20,6 +20,7 @@ import org.jooq.tools.JooqLogger;
 import org.jooq.tools.jdbc.JDBCUtils;
 import org.jooq.util.Databases;
 import org.jooq.util.SchemaDefinition;
+import org.jooq.util.jaxb.Catalog;
 import org.jooq.util.jaxb.Schema;
 import org.tinywind.schemereporter.jaxb.Configuration;
 import org.tinywind.schemereporter.jaxb.Database;
@@ -37,10 +38,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.Driver;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 import static java.lang.System.exit;
 
@@ -162,15 +160,20 @@ public class SchemeReporter {
 
         final Connection connection = driverClass.newInstance().connect(databaseConfig.getUrl(), properties);
         final org.jooq.util.Database database = Databases.databaseClass(JDBCUtils.dialect(databaseConfig.getUrl())).newInstance();
+
+        final Catalog catalog = new Catalog();
+        catalog.setInputCatalog("");
+        catalog.setOutputCatalog("");
+        catalog.setOutputCatalogToDefault(false);
+        catalog.setSchemata(Collections.singletonList(new Schema()));
+
         database.setConnection(connection);
+        database.setConfiguredCatalogs(Collections.singletonList(catalog));
+        database.setConfiguredSchemata(new ArrayList<>());
+        database.setConfiguredEnumTypes(new ArrayList<>());
         database.setIncludes(new String[]{databaseConfig.getIncludes()});
         database.setExcludes(new String[]{databaseConfig.getExcludes()});
-
-        final List<Schema> schemata = new ArrayList<>();
-        final Schema schema = new Schema();
-        schema.setInputSchema(databaseConfig.getInputSchema());
-        schemata.add(schema);
-        database.setConfiguredSchemata(schemata);
+        database.setIncludeRelations(true);
 
         log.info("----------------------------------------------------------");
         log.info("Database parameters");
@@ -184,16 +187,19 @@ public class SchemeReporter {
         log.info("----------------------------------------------------------");
         log.info("----------------------------------------------------------");
 
-        database.setConfiguredEnumTypes(new ArrayList<>());
-        database.setIncludeRelations(true);
-
         final Generator generator = configuration.getGenerator();
         @SuppressWarnings("unchecked") final Class<? extends Reportable> reporterClass = (Class<? extends Reportable>) Class.forName(generator.getReporterClass());
         final Reportable reporter = reporterClass.getConstructor().newInstance();
         reporter.setDatabase(database);
         reporter.setGenerator(generator);
 
+        final List<String> inputSchemaNames = databaseConfig.getInputSchema() != null
+                ? Arrays.asList(databaseConfig.getInputSchema().toLowerCase().split("[|]"))
+                : null;
         for (SchemaDefinition schemaDefinition : database.getSchemata()) {
+            if (inputSchemaNames != null && !inputSchemaNames.contains(schemaDefinition.getName().toLowerCase()) && !inputSchemaNames.contains(schemaDefinition.getOutputName().toLowerCase()))
+                continue;
+
             try {
                 reporter.generate(schemaDefinition);
             } catch (Exception e) {
