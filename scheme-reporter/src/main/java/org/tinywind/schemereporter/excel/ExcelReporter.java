@@ -128,7 +128,7 @@ public class ExcelReporter implements Reportable {
 					final StringBuilder referredString = new StringBuilder();
 					column.getUniqueKeys().forEach(ukey -> ukey.getForeignKeys().forEach(fkey -> {
 						referredString.append("[").append(fkey.getKeyTable().getName()).append("] ");
-						fkey.getKeyColumns().forEach(keyColumn -> referredString.append(keyColumn).append(" "));
+						fkey.getKeyColumns().forEach(keyColumn -> referredString.append(keyColumn.getName()).append(" "));
 						referredString.append("\n");
 					}));
 					create(row, INDEX_REFERRED, referredString.toString().trim(), style);
@@ -136,7 +136,7 @@ public class ExcelReporter implements Reportable {
 					final StringBuilder referString = new StringBuilder();
 					column.getForeignKeys().forEach(fkey -> {
 						referString.append("[").append(fkey.getReferencedTable().getName()).append("] ");
-						fkey.getReferencedColumns().forEach(keyColumn -> referString.append(keyColumn).append(" "));
+						fkey.getReferencedColumns().forEach(keyColumn -> referString.append(keyColumn.getName()).append(" "));
 						referString.append("\n");
 					});
 					create(row, INDEX_REFER, referString.toString().trim(), style);
