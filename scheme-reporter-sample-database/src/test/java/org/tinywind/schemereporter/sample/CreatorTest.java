@@ -18,6 +18,7 @@ package org.tinywind.schemereporter.sample;
 
 import org.junit.Test;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -28,16 +29,16 @@ import java.sql.Statement;
  */
 public class CreatorTest {
     @Test
-    public void test() throws SQLException {
+    public void test() throws SQLException, IOException {
         Creator.create();
 
         try (final Connection connection = Creator.connection()) {
             try (final Statement statement = connection.createStatement()) {
-                statement.execute("INSERT INTO parent (name, age) VALUES ('mimi', 25)");
+                statement.execute("INSERT INTO public_file (original_name, name, size) VALUES ('original_name', 'name', 0)");
             }
 
             try (final Statement statement = connection.createStatement()) {
-                final ResultSet resultSet = statement.executeQuery("SELECT * FROM parent");
+                final ResultSet resultSet = statement.executeQuery("SELECT * FROM public_file");
 
                 int size = 0;
                 while (resultSet.next()) size++;

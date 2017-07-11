@@ -18,7 +18,10 @@ package org.tinywind.schemereporter.sample;
 
 import org.h2.Driver;
 import org.h2.tools.Server;
+import org.h2.util.StringUtils;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -28,42 +31,36 @@ import java.util.Properties;
  * @author tinywind
  */
 public class Creator {
-    public static Connection connection() throws SQLException {
+	public static Connection connection() throws SQLException {
 
-        final String url = "jdbc:h2:tcp://localhost:9092/mem:test;DB_CLOSE_DELAY=-1";
-        final Properties properties = new Properties();
-        properties.put("user", "sa");
-        properties.put("password", "");
+		final String url = "jdbc:h2:tcp://localhost:9092/mem:test;DB_CLOSE_DELAY=-1";
+		final Properties properties = new Properties();
+		properties.put("user", "sa");
+		properties.put("password", "");
 
-        return new Driver().connect(url, properties);
-    }
+		return new Driver().connect(url, properties);
+	}
 
-    public static void create() throws SQLException {
-        Server.createTcpServer().start();
+	public static void create() throws SQLException, IOException {
+		Server.createTcpServer().start();
 
-        try (final Connection connect = connection()) {
-            try (final Statement statement = connect.createStatement()) {
-                statement.execute("CREATE TABLE parent (" +
-                        "id int AUTO_INCREMENT NOT NULL COMMENT 'identifier'," +
-                        "name varchar(32) NOT NULL COMMENT 'name of parent'," +
-                        "age int," +
-                        "CONSTRAINT parent_pkey PRIMARY KEY (id)" +
-                        ")");
-            }
+		try (final Connection connect = connection()) {
 
-            try (final Statement statement = connect.createStatement()) {
-                statement.execute("CREATE TABLE child (" +
-                        "id int AUTO_INCREMENT NOT NULL COMMENT 'identifier'," +
-                        "name varchar(32) NOT NULL COMMENT 'name of child'," +
-                        "age int," +
-                        "parent_id int NOT NULL COMMENT 'parent id'," +
-                        "CONSTRAINT child_pkey PRIMARY KEY (id)" +
-                        ")");
-            }
+			final byte[] file = new byte[1024 * 1024];
+			InputStream input = Creator.class.getResourceAsStream("/ddl.sql");
+			int read = input.read(file);
+			String content = new String(file, 0, read, "UTF-8");
+			String[] strings = content.split(";");
 
-            try (final Statement statement = connect.createStatement()) {
-                statement.execute("ALTER TABLE child ADD FOREIGN KEY (parent_id) REFERENCES parent(id)");
-            }
-        }
-    }
+			for (String string : strings) {
+				final String query = string.trim();
+				if (StringUtils.isNullOrEmpty(query))
+					continue;
+
+				try (final Statement statement = connect.createStatement()) {
+					statement.execute(query);
+				}
+			}
+		}
+	}
 }

@@ -21,46 +21,51 @@ import org.junit.Test;
 import org.tinywind.schemereporter.sample.Creator;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 
 public class PdfTest {
-    private final String header = "" +
-            "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" +
-            "<configuration>" +
-            "    <jdbc>" +
-            "        <driverClass>org.h2.Driver</driverClass>" +
-            "    </jdbc>" +
-            "    <database>" +
-            "        <url>jdbc:h2:tcp://localhost:9092/mem:test;DB_CLOSE_DELAY=-1</url>" +
-            "        <user>sa</user>" +
-            "        <password></password>" +
-            "        <includes>.*</includes>" +
-            "        <inputSchema>PUBLIC</inputSchema>" +
-            "    </database>" +
-            "    <generator>";
-    private final String tail = "" +
-            "        <outputDirectory>doc</outputDirectory>" +
-            "    </generator>" +
-            "</configuration>";
+	private final String header = "" +
+			"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" +
+			"<configuration>" +
+			"    <jdbc>" +
+			"        <driverClass>org.h2.Driver</driverClass>" +
+			"    </jdbc>" +
+			"    <database>" +
+			"        <url>jdbc:h2:tcp://localhost:9092/mem:test;DB_CLOSE_DELAY=-1</url>" +
+			"        <user>sa</user>" +
+			"        <password></password>" +
+			"        <includes>.*</includes>" +
+			"        <inputSchema>PUBLIC</inputSchema>" +
+			"    </database>" +
+			"    <generator>";
+	private final String tail = "" +
+			"        <outputDirectory>doc</outputDirectory>" +
+			"    </generator>" +
+			"</configuration>";
 
-    private final String pdfConfig = header + "<reporterClass>org.tinywind.schemereporter.pdf.PdfReporter</reporterClass>" + tail;
-    private final String htmlConfig = header + "<reporterClass>org.tinywind.schemereporter.html.HtmlReporter</reporterClass>" + tail;
+	private final String pdfConfig = header + "<reporterClass>org.tinywind.schemereporter.pdf.PdfReporter</reporterClass>" + tail;
+	private final String htmlConfig = header + "<reporterClass>org.tinywind.schemereporter.html.HtmlReporter</reporterClass>" + tail;
+	private final String excelConfig = header + "<reporterClass>org.tinywind.schemereporter.excel.ExcelReporter</reporterClass>" + tail;
 
-    @Test
-    public void test() throws SQLException {
-        Creator.create();
+	@Test
+	public void test() throws SQLException, IOException {
+		Creator.create();
 
-        try {
-            SchemeReporter.generate(SchemeReporter.load(new StringInputStream(htmlConfig)));
-            assert new File("doc/public.html").exists();
-            SchemeReporter.generate(SchemeReporter.load(new StringInputStream(pdfConfig)));
-            assert new File("doc/public.pdf").exists();
-        } catch (Exception e) {
-            e.printStackTrace();
-            assert false;
-        } finally {
-            new File("doc/public.html").deleteOnExit();
-            new File("doc/public.pdf").deleteOnExit();
-        }
-    }
+		try {
+			SchemeReporter.generate(SchemeReporter.load(new StringInputStream(htmlConfig)));
+			assert new File("doc/public.html").exists();
+			SchemeReporter.generate(SchemeReporter.load(new StringInputStream(pdfConfig)));
+			assert new File("doc/public.pdf").exists();
+			SchemeReporter.generate(SchemeReporter.load(new StringInputStream(excelConfig)));
+			assert new File("doc/public.xlsx").exists();
+		} catch (Exception e) {
+			e.printStackTrace();
+			assert false;
+		} finally {
+			new File("doc/public.html").deleteOnExit();
+			new File("doc/public.pdf").deleteOnExit();
+			new File("doc/public.xlsx").deleteOnExit();
+		}
+	}
 }
