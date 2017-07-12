@@ -104,7 +104,11 @@ public class HtmlReporter implements Reportable, Closeable {
     public void generate(SchemaDefinition schema) throws Exception {
         final SchemaVersionProvider schemaVersionProvider = schema.getDatabase().getSchemaVersionProvider();
         final String version = schemaVersionProvider != null ? schemaVersionProvider.version(schema) : null;
-        final File file = new File(generator.getOutputDirectory(), schema.getName() + (!StringUtils.isEmpty(version) ? "-" + version : "") + ".html");
+        String revise = "";
+        File file;
+        while ((file = new File(generator.getOutputDirectory(), schema.getName() + (!StringUtils.isEmpty(version) ? "-" + version : "") + revise + ".html")).exists()) {
+            revise += "_";
+        }
 
         log.info("output file: " + file);
         final File path = file.getParentFile();
@@ -174,7 +178,7 @@ public class HtmlReporter implements Reportable, Closeable {
             throw new RuntimeException("failed: JspCompile");
         }
 
-        final URLClassLoader jspClassLoader = new URLClassLoader(new URL[]{tempDir.toURI().toURL()}, this.getClass().getClassLoader());
+        final URLClassLoader jspClassLoader = new URLClassLoader(new URL[]{ tempDir.toURI().toURL() }, this.getClass().getClassLoader());
         final String jspClassName = (StringUtils.isEmpty(JSP_PACKAGE_NAME) ? "" : JSP_PACKAGE_NAME + ".") + getServletClassName(templateFile.getName());
         final Class<?> klass = Class.forName(jspClassName, true, jspClassLoader);
         return (HttpJspBase) klass.getConstructor().newInstance();

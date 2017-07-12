@@ -70,7 +70,11 @@ public class PdfReporter implements Reportable {
     public final void generate(SchemaDefinition schema) throws Exception {
         final SchemaVersionProvider schemaVersionProvider = schema.getDatabase().getSchemaVersionProvider();
         final String version = schemaVersionProvider != null ? schemaVersionProvider.version(schema) : null;
-        final File file = new File(generator.getOutputDirectory(), schema.getName() + (!StringUtils.isEmpty(version) ? "-" + version : "") + ".pdf");
+        String revise = "";
+        File file;
+        while ((file = new File(generator.getOutputDirectory(), schema.getName() + (!StringUtils.isEmpty(version) ? "-" + version : "") + revise + ".pdf")).exists()) {
+            revise += "_";
+        }
 
         log.info("output file: " + file);
         final File path = file.getParentFile();

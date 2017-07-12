@@ -40,7 +40,7 @@ public class TableImage {
         final Map<String, String> relationSvg = new HashMap<>();
         for (TableDefinition table : tables) {
             final String cTable = table.getName();
-            final Node[] cNode = {createNode(cTable).attr("weight", 8).attr("fillcolor", "grey75")};
+            final Node[] cNode = { createNode(cTable).attr("weight", 8).attr("fillcolor", "grey75") };
 
             final Map<String, Node> refer = new HashMap<>();
             final Map<String, Node> referred = new HashMap<>();

@@ -171,8 +171,8 @@ public class SchemeReporter {
         database.setConfiguredCatalogs(Collections.singletonList(catalog));
         database.setConfiguredSchemata(new ArrayList<>());
         database.setConfiguredEnumTypes(new ArrayList<>());
-        database.setIncludes(new String[]{databaseConfig.getIncludes()});
-        database.setExcludes(new String[]{databaseConfig.getExcludes()});
+        database.setIncludes(new String[]{ databaseConfig.getIncludes() });
+        database.setExcludes(new String[]{ databaseConfig.getExcludes() });
         database.setIncludeRelations(true);
 
         log.info("----------------------------------------------------------");
