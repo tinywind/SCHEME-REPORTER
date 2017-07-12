@@ -130,9 +130,12 @@ public class PdfReporter implements Reportable {
                     .add(new Paragraph()
                             .add(createImage(relationSvg.get(e.getName()), svgScaleRate, MAX_WIDTH, MAX_HEIGHT))
                             .setTextAlignment(TextAlignment.CENTER))
-                    .add(tableDefinition(e))
-                    .add(tableUniqueKey(e));
-            if (e.getColumns().stream().filter(c -> c.getComment() != null).count() > 0)
+                    .add(tableDefinition(e));
+
+            if (e.getUniqueKeys().size() > 0)
+                div.add(tableUniqueKey(e));
+
+            if (e.getColumns().stream().filter(c -> !StringUtils.isEmpty(c.getComment())).count() > 0)
                 div.add(tableColumnComments(e));
 
             document.add(div);
@@ -321,6 +324,8 @@ public class PdfReporter implements Reportable {
         for (int i = 0; i < list.size(); i++) {
             final boolean presentBottom = i + 1 < list.size();
             final ColumnDefinition column = list.get(i);
+            if (StringUtils.isEmpty(column.getComment()))
+                continue;
             table.addCell(cell(column.getName(), presentBottom));
             table.addCell(cell(column.getComment(), presentBottom));
         }
