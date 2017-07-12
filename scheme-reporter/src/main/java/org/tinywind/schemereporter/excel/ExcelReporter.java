@@ -18,7 +18,6 @@ package org.tinywind.schemereporter.excel;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
-import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jooq.tools.JooqLogger;
 import org.jooq.tools.StringUtils;
@@ -34,15 +33,14 @@ import java.util.Map;
 
 public class ExcelReporter implements Reportable {
 	private static final JooqLogger log = JooqLogger.getLogger(ExcelReporter.class);
-	private static final int INDEX_HEADER_ROW = 0;
 	private static final int MAX_COLUMN_WIDTH = 12000;
 	private static int iColumn = 0;
 	private static final int INDEX_COLUMN = iColumn++;
 	private static final int INDEX_TYPE = iColumn++;
 	private static final int INDEX_NULLABLE = iColumn++;
 	private static final int INDEX_PKEY = iColumn++;
-	private static final int INDEX_UKEY = iColumn++;
 	private static final int INDEX_DEFAULTED = iColumn++;
+	private static final int INDEX_UKEY = iColumn++;
 	private static final int INDEX_REFERRED = iColumn++;
 	private static final int INDEX_REFER = iColumn++;
 	private static final int INDEX_DESCRIPTION = iColumn;
@@ -79,6 +77,7 @@ public class ExcelReporter implements Reportable {
 		try (final Workbook workbook = new XSSFWorkbook()) {
 
 			final CellStyle style = workbook.createCellStyle();
+			final CellStyle leadStyle = workbook.createCellStyle();
 			final CellStyle headerStyle = workbook.createCellStyle();
 
 			style.setBorderTop(XSSFCellStyle.BORDER_THIN);
@@ -104,14 +103,24 @@ public class ExcelReporter implements Reportable {
 			headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
 			headerStyle.setFillPattern(CellStyle.SOLID_FOREGROUND);
 
-			for (final TableDefinition table : tables) {
-				final Sheet sheet = workbook.createSheet(table.getName());
-				createHeader(sheet, headerStyle);
+			final Font font = workbook.createFont();
+			font.setFontHeightInPoints((short) 12);
+			font.setBold(true);
+			leadStyle.setFont(font);
+
+			final Sheet sheet = workbook.createSheet("tables");
+
+			for (int iTable = 0, iRow = 0; iTable < tables.size(); iTable++, iRow++) {
+				final TableDefinition table = tables.get(iTable);
+
+				final Cell tableCell = sheet.createRow(iRow++).createCell(0);
+				tableCell.setCellValue(table.getName());
+				tableCell.setCellStyle(leadStyle);
+				createHeader(sheet, iRow++, headerStyle);
 
 				for (int iColumn = 0; iColumn < table.getColumns().size(); iColumn++) {
 					final ColumnDefinition column = table.getColumns().get(iColumn);
-					final Row row = sheet.createRow(iColumn + 1);
-
+					final Row row = sheet.createRow(iRow++);
 
 					create(row, INDEX_COLUMN, column.getName(), style);
 					create(row, INDEX_TYPE, column.getType().getType().equals("USER-DEFINED")
@@ -142,20 +151,20 @@ public class ExcelReporter implements Reportable {
 					create(row, INDEX_REFER, referString.toString().trim(), style);
 					create(row, INDEX_DESCRIPTION, column.getComment(), style);
 				}
+			}
 
-				for (int i = 0; i <= MAX_INDEX_COLUMN; i++) {
-					sheet.autoSizeColumn(i);
-					if (MAX_COLUMN_WIDTH < sheet.getColumnWidth(i))
-						sheet.setColumnWidth(i, MAX_COLUMN_WIDTH);
-				}
+			for (int i = 0; i <= MAX_INDEX_COLUMN; i++) {
+				sheet.autoSizeColumn(i);
+				if (MAX_COLUMN_WIDTH < sheet.getColumnWidth(i))
+					sheet.setColumnWidth(i, MAX_COLUMN_WIDTH);
 			}
 
 			workbook.write(new FileOutputStream(file));
 		}
 	}
 
-	private void createHeader(Sheet sheet, CellStyle style) {
-		final Row row = sheet.createRow(INDEX_HEADER_ROW);
+	private void createHeader(Sheet sheet, int iRow, CellStyle style) {
+		final Row row = sheet.createRow(iRow);
 
 		create(row, INDEX_COLUMN, "column", style);
 		create(row, INDEX_TYPE, "type", style);

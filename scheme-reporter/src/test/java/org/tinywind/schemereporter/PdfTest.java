@@ -54,18 +54,18 @@ public class PdfTest {
 
 		try {
 			SchemeReporter.generate(SchemeReporter.load(new StringInputStream(htmlConfig)));
-			assert new File("doc/public.html").exists();
+			assert new File("doc/PUBLIC.html").exists();
 			SchemeReporter.generate(SchemeReporter.load(new StringInputStream(pdfConfig)));
-			assert new File("doc/public.pdf").exists();
+			assert new File("doc/PUBLIC.pdf").exists();
 			SchemeReporter.generate(SchemeReporter.load(new StringInputStream(excelConfig)));
-			assert new File("doc/public.xlsx").exists();
+			assert new File("doc/PUBLIC.xlsx").exists();
 		} catch (Exception e) {
 			e.printStackTrace();
 			assert false;
 		} finally {
-			new File("doc/public.html").deleteOnExit();
-			new File("doc/public.pdf").deleteOnExit();
-			new File("doc/public.xlsx").deleteOnExit();
+			new File("doc/PUBLIC.html").deleteOnExit();
+			new File("doc/PUBLIC.pdf").deleteOnExit();
+			new File("doc/PUBLIC.xlsx").deleteOnExit();
 		}
 	}
 }
