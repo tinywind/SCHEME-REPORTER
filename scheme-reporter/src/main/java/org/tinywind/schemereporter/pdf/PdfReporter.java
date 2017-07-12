@@ -84,8 +84,8 @@ public class PdfReporter implements Reportable {
 
         final PageSize PAGE_SIZE = PageSize.A4;
         final float PAGE_MARGIN = 30;
-        final float MAX_WIDTH = PAGE_SIZE.getWidth() - 2 * PAGE_MARGIN;
-        final float MAX_HEIGHT = PAGE_SIZE.getHeight() - 2 * PAGE_MARGIN;
+        final float MAX_WIDTH = PAGE_SIZE.getWidth() - PAGE_MARGIN * 2;
+        final float MAX_HEIGHT = PAGE_SIZE.getWidth() - PAGE_MARGIN * 2;
         final float svgScaleRate = 0.6f;
 
         final PdfDocument pdf = new PdfDocument(new PdfWriter(new FileOutputStream(file)));
@@ -93,25 +93,35 @@ public class PdfReporter implements Reportable {
         document.setMargins(PAGE_MARGIN, PAGE_MARGIN, PAGE_MARGIN, PAGE_MARGIN);
 
         document.add(new Paragraph(new Text("Table of contents").setFontSize(14).setBold()).setTextAlignment(TextAlignment.CENTER));
-        document.add(itemOfTableContents("Enum Definition", "Enum Definition"));
-        for (Definition e : enums)
-            document.add(leafItemOfTableContents(e.getName(), "enum$" + e.getName()));
+
+        if (enums.size() > 0) {
+            document.add(itemOfTableContents("Enum Definition", "Enum Definition"));
+            for (Definition e : enums)
+                document.add(leafItemOfTableContents(e.getName(), "enum$" + e.getName()));
+        }
 
         document.add(itemOfTableContents("Table Definition", "Table Definition"));
         for (Definition e : tables)
             document.add(leafItemOfTableContents(e.getName(), "table$" + e.getName()));
         document.add(new AreaBreak());
 
-        final Div divEnums = chapter("Enum Definition");
-        for (EnumDefinition e : enums)
-            divEnums.add(enumElement(e));
+        if (enums.size() > 0) {
+            final Div divEnums = chapter("Enum Definition");
+            for (EnumDefinition e : enums)
+                divEnums.add(enumElement(e));
+            document.add(divEnums);
+            document.add(new AreaBreak());
+        }
 
-        final Div divTables = chapter("Table Definition");
-        divTables.add(new Paragraph()
+        final Div divTableOverview = chapter("Table Definition");
+        divTableOverview.add(new Paragraph()
                 .add(createImage(totalRelationSvg, svgScaleRate, MAX_WIDTH, MAX_HEIGHT))
                 .setTextAlignment(TextAlignment.CENTER));
+        document.add(divTableOverview);
+        document.add(new AreaBreak());
 
-        for (TableDefinition e : tables) {
+        for (int i = 0; i < tables.size(); i++) {
+            final TableDefinition e = tables.get(i);
             final Div div = tableTitle(e)
                     .add(new Paragraph()
                             .add(createImage(relationSvg.get(e.getName()), svgScaleRate, MAX_WIDTH, MAX_HEIGHT))
@@ -120,12 +130,12 @@ public class PdfReporter implements Reportable {
                     .add(tableUniqueKey(e));
             if (e.getColumns().stream().filter(c -> c.getComment() != null).count() > 0)
                 div.add(tableColumnComments(e));
-            divTables.add(div.setMarginBottom(30));
-        }
 
-        document.add(divEnums);
-        document.add(new AreaBreak());
-        document.add(divTables);
+            document.add(div);
+
+            if (i + 1 < tables.size())
+                document.add(new AreaBreak());
+        }
 
         document.close();
     }
@@ -154,14 +164,14 @@ public class PdfReporter implements Reportable {
             if (width < maxWidth) {
                 scaleRate = svgScaleRate;
             } else {
-                final float rate = (width / maxWidth);
+                final float rate = (maxWidth / width);
                 scaleRate = rate > svgScaleRate ? svgScaleRate : rate;
             }
         } else {
             if (height < maxHeight) {
                 scaleRate = svgScaleRate;
             } else {
-                final float rate = (height / maxHeight);
+                final float rate = (maxHeight / height);
                 scaleRate = rate > svgScaleRate ? svgScaleRate : rate;
             }
         }
@@ -240,7 +250,7 @@ public class PdfReporter implements Reportable {
     }
 
     private BlockElement<?> tableDefinition(TableDefinition e) {
-        final Table table = new Table(new float[]{20, 20, 6, 6, 8, 20, 20})
+        final Table table = new Table(new float[]{ 20, 20, 6, 6, 8, 20, 20 })
                 .setWidthPercent(100)
                 .addHeaderCell(headerCell("column"))
                 .addHeaderCell(headerCell("type"))
@@ -279,7 +289,7 @@ public class PdfReporter implements Reportable {
     }
 
     private BlockElement<?> tableUniqueKey(TableDefinition e) {
-        final Table table = new Table(new float[]{20, 30, 50})
+        final Table table = new Table(new float[]{ 20, 30, 50 })
                 .setWidthPercent(100)
                 .addHeaderCell(headerCell("unique key"))
                 .addHeaderCell(headerCell("columns"))
@@ -299,7 +309,7 @@ public class PdfReporter implements Reportable {
     }
 
     private BlockElement<?> tableColumnComments(TableDefinition e) {
-        final Table table = new Table(new float[]{20, 80})
+        final Table table = new Table(new float[]{ 20, 80 })
                 .setWidthPercent(100)
                 .addHeaderCell(headerCell("column"))
                 .addHeaderCell(headerCell("description"));

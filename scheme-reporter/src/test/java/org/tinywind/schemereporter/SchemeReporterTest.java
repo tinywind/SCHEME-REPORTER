@@ -24,7 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 
-public class PdfTest {
+public class SchemeReporterTest {
 	private final String header = "" +
 			"<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" +
 			"<configuration>" +

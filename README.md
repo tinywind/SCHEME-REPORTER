@@ -28,6 +28,7 @@ create reporter from remote database
                     </database>                
                     <generator>
                         <!--<reporterClass>org.tinywind.schemereporter.pdf.PdfReporter</reporterClass>-->
+                        <!--<reporterClass>org.tinywind.schemereporter.excel.ExcelReporter</reporterClass>-->
                         <!--<template>scheme-reporter/src/main/resources/asset/default.jsp</template>-->
                         <outputDirectory>doc</outputDirectory>
                     </generator>
@@ -51,6 +52,8 @@ mvn scheme-reporter-maven:generate
 https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.html
 
 https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.pdf
+
+https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.xlsx
 
 
 # LICENSE

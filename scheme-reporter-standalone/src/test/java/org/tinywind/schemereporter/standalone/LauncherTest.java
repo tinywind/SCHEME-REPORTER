@@ -33,8 +33,8 @@ public class LauncherTest {
         try {
             Launcher.main(new String[]{"src/test/resources/sample-configuration.xml", "src/test/resources/h2-1.4.196.jar"});
         } finally {
-            new File("doc/public.html").deleteOnExit();
-            new File("doc/public.pdf").deleteOnExit();
+            new File("doc/PUBLIC.html").deleteOnExit();
+            new File("doc/PUBLIC.pdf").deleteOnExit();
         }
     }
 }
