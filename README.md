@@ -8,7 +8,7 @@ create reporter from remote database
             <plugin>
                 <groupId>org.tinywind</groupId>
                 <artifactId>scheme-reporter-maven</artifactId>
-                <version>0.3.1</version>
+                <version>0.4.0</version>
                 <executions>
                     <execution>
                         <phase>none</phase>
