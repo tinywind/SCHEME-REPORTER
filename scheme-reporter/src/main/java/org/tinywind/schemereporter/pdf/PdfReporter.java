@@ -16,9 +16,12 @@
  */
 package org.tinywind.schemereporter.pdf;
 
+import com.itextpdf.io.font.PdfEncodings;
 import com.itextpdf.io.image.ImageDataFactory;
 import com.itextpdf.kernel.color.Color;
 import com.itextpdf.kernel.color.DeviceRgb;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
 import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
@@ -42,18 +45,20 @@ import org.tinywind.schemereporter.jaxb.Generator;
 import org.tinywind.schemereporter.util.TableImage;
 
 import java.io.*;
+import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class PdfReporter implements Reportable {
     private static final JooqLogger log = JooqLogger.getLogger(PdfReporter.class);
+    private final PdfFont font = PdfFontFactory.createFont(new File(getClass().getResource("/asset/font/NanumMyeongjo.ttf").toURI()).getAbsolutePath(), PdfEncodings.IDENTITY_H);
     private Database database;
     private Generator generator;
     private Color lightGrey = new DeviceRgb(0xF5, 0xF5, 0xF5);
     private Color darkBlue = new DeviceRgb(0x00, 0x00, 0x60);
 
-    public PdfReporter() {
+    public PdfReporter() throws IOException, URISyntaxException {
     }
 
     @Override
@@ -95,6 +100,7 @@ public class PdfReporter implements Reportable {
         final PdfDocument pdf = new PdfDocument(new PdfWriter(new FileOutputStream(file)));
         final Document document = new Document(pdf, PAGE_SIZE);
         document.setMargins(PAGE_MARGIN, PAGE_MARGIN, PAGE_MARGIN, PAGE_MARGIN);
+        document.setFont(font);
 
         document.add(new Paragraph(new Text("Table of contents").setFontSize(14).setBold()).setTextAlignment(TextAlignment.CENTER));
 
@@ -257,7 +263,7 @@ public class PdfReporter implements Reportable {
     }
 
     private BlockElement<?> tableDefinition(TableDefinition e) {
-        final Table table = new Table(new float[]{ 20, 20, 6, 6, 8, 20, 20 })
+        final Table table = new Table(new float[]{20, 20, 6, 6, 8, 20, 20})
                 .setWidthPercent(100)
                 .addHeaderCell(headerCell("column"))
                 .addHeaderCell(headerCell("type"))
@@ -296,7 +302,7 @@ public class PdfReporter implements Reportable {
     }
 
     private BlockElement<?> tableUniqueKey(TableDefinition e) {
-        final Table table = new Table(new float[]{ 20, 30, 50 })
+        final Table table = new Table(new float[]{20, 30, 50})
                 .setWidthPercent(100)
                 .addHeaderCell(headerCell("unique key"))
                 .addHeaderCell(headerCell("columns"))
@@ -316,7 +322,7 @@ public class PdfReporter implements Reportable {
     }
 
     private BlockElement<?> tableColumnComments(TableDefinition e) {
-        final Table table = new Table(new float[]{ 20, 80 })
+        final Table table = new Table(new float[]{20, 80})
                 .setWidthPercent(100)
                 .addHeaderCell(headerCell("column"))
                 .addHeaderCell(headerCell("description"));
