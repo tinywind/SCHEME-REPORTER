@@ -284,9 +284,9 @@ public class PdfReporter implements Reportable {
             } else {
                 table.addCell(cell(type + (column.getType().getLength() != 0 ? "(" + column.getType().getLength() + ")" : ""), presentBottom));
             }
-            table.addCell(cell(column.isNullable() ? "V" : "", presentBottom).setTextAlignment(TextAlignment.CENTER));
-            table.addCell(cell(column.getPrimaryKey() != null ? "V" : "", presentBottom).setTextAlignment(TextAlignment.CENTER));
-            table.addCell(cell(column.getType().isDefaulted() ? "V" : "", presentBottom).setTextAlignment(TextAlignment.CENTER));
+            table.addCell(cell(column.isNullable() ? "●" : "", presentBottom).setTextAlignment(TextAlignment.CENTER));
+            table.addCell(cell(column.getPrimaryKey() != null ? "●" : "", presentBottom).setTextAlignment(TextAlignment.CENTER));
+            table.addCell(cell(column.getType().isDefaulted() ? "●" : "", presentBottom).setTextAlignment(TextAlignment.CENTER));
 
             final Div divUniqueKey = new Div();
             for (UniqueKeyDefinition key : column.getUniqueKeys())
