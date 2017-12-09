@@ -37,6 +37,7 @@ import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
+import org.apache.commons.io.IOUtils;
 import org.jooq.tools.JooqLogger;
 import org.jooq.tools.StringUtils;
 import org.jooq.util.*;
@@ -45,21 +46,16 @@ import org.tinywind.schemereporter.jaxb.Generator;
 import org.tinywind.schemereporter.util.TableImage;
 
 import java.io.*;
-import java.net.URISyntaxException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class PdfReporter implements Reportable {
     private static final JooqLogger log = JooqLogger.getLogger(PdfReporter.class);
-    private final PdfFont font = PdfFontFactory.createFont(new File(getClass().getResource("/asset/font/NanumMyeongjo.ttf").toURI()).getAbsolutePath(), PdfEncodings.IDENTITY_H);
     private Database database;
     private Generator generator;
     private Color lightGrey = new DeviceRgb(0xF5, 0xF5, 0xF5);
     private Color darkBlue = new DeviceRgb(0x00, 0x00, 0x60);
-
-    public PdfReporter() throws IOException, URISyntaxException {
-    }
 
     @Override
     public void setDatabase(Database database) {
@@ -73,6 +69,10 @@ public class PdfReporter implements Reportable {
 
     @Override
     public final void generate(SchemaDefinition schema) throws Exception {
+
+        final byte[] fontBytes = IOUtils.toByteArray(getClass().getResourceAsStream("/asset/font/NanumMyeongjo.ttf"));
+        final PdfFont font = PdfFontFactory.createFont(fontBytes, PdfEncodings.IDENTITY_H);
+
         final SchemaVersionProvider schemaVersionProvider = schema.getDatabase().getSchemaVersionProvider();
         final String version = schemaVersionProvider != null ? schemaVersionProvider.version(schema) : null;
         String revise = "";
