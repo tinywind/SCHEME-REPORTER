@@ -8,7 +8,7 @@ create reporter from remote database
             <plugin>
                 <groupId>org.tinywind</groupId>
                 <artifactId>scheme-reporter-maven</artifactId>
-                <version>0.4.0</version>
+                <version>0.5.0</version>
                 <executions>
                     <execution>
                         <phase>none</phase>
@@ -29,6 +29,7 @@ create reporter from remote database
                     <generator>
                         <!--<reporterClass>org.tinywind.schemereporter.pdf.PdfReporter</reporterClass>-->
                         <!--<reporterClass>org.tinywind.schemereporter.excel.ExcelReporter</reporterClass>-->
+                        <!--<reporterClass>org.tinywind.schemereporter.docx.DocxReporter</reporterClass>-->
                         <!--<template>scheme-reporter/src/main/resources/asset/default.jsp</template>-->
                         <outputDirectory>doc</outputDirectory>
                     </generator>
@@ -54,6 +55,8 @@ https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.
 https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.pdf
 
 https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.xlsx
+
+https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.docx
 
 
 # LICENSE

@@ -23,9 +23,16 @@ import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.model.Graph;
 import guru.nidi.graphviz.model.Node;
 import javafx.util.Pair;
+import org.apache.batik.transcoder.TranscoderException;
+import org.apache.batik.transcoder.TranscoderInput;
+import org.apache.batik.transcoder.TranscoderOutput;
+import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.jooq.util.Definition;
 import org.jooq.util.TableDefinition;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +47,7 @@ public class TableImage {
         final Map<String, String> relationSvg = new HashMap<>();
         for (TableDefinition table : tables) {
             final String cTable = table.getName();
-            final Node[] cNode = { createNode(cTable).attr("weight", 8).attr("fillcolor", "grey75") };
+            final Node[] cNode = {createNode(cTable).attr("weight", 8).attr("fillcolor", "grey75")};
 
             final Map<String, Node> refer = new HashMap<>();
             final Map<String, Node> referred = new HashMap<>();
@@ -92,4 +99,20 @@ public class TableImage {
     private static Node createReferNode(String name) {
         return createNode(name).attr("fillcolor", "white").attr("URL", "#table$" + name);
     }
+
+    public static byte[] pngBytesFromSvg(String svg) throws TranscoderException {
+        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        final TranscoderInput input = new TranscoderInput(new StringReader(svg));
+        final TranscoderOutput output = new TranscoderOutput(outputStream);
+        final PNGTranscoder converter = new PNGTranscoder();
+        converter.transcode(input, output);
+        byte[] bytes = outputStream.toByteArray();
+        try {
+            outputStream.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return bytes;
+    }
+
 }

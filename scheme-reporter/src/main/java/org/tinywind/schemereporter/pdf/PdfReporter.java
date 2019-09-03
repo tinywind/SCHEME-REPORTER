@@ -34,9 +34,6 @@ import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.property.TabAlignment;
 import com.itextpdf.layout.property.TextAlignment;
 import org.apache.batik.transcoder.TranscoderException;
-import org.apache.batik.transcoder.TranscoderInput;
-import org.apache.batik.transcoder.TranscoderOutput;
-import org.apache.batik.transcoder.image.PNGTranscoder;
 import org.apache.commons.io.IOUtils;
 import org.jooq.tools.JooqLogger;
 import org.jooq.tools.StringUtils;
@@ -45,10 +42,13 @@ import org.tinywind.schemereporter.Reportable;
 import org.tinywind.schemereporter.jaxb.Generator;
 import org.tinywind.schemereporter.util.TableImage;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import static org.tinywind.schemereporter.util.TableImage.pngBytesFromSvg;
 
 public class PdfReporter implements Reportable {
     private static final JooqLogger log = JooqLogger.getLogger(PdfReporter.class);
@@ -75,10 +75,10 @@ public class PdfReporter implements Reportable {
 
         final SchemaVersionProvider schemaVersionProvider = schema.getDatabase().getSchemaVersionProvider();
         final String version = schemaVersionProvider != null ? schemaVersionProvider.version(schema) : null;
-        String revise = "";
+        StringBuilder revise = new StringBuilder();
         File file;
         while ((file = new File(generator.getOutputDirectory(), schema.getName() + (!StringUtils.isEmpty(version) ? "-" + version : "") + revise + ".pdf")).exists()) {
-            revise += "_";
+            revise.append("_");
         }
 
         log.info("output file: " + file);
@@ -153,21 +153,6 @@ public class PdfReporter implements Reportable {
         document.close();
     }
 
-    private byte[] pngBytesFromSvg(String svg) throws TranscoderException {
-        final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        final TranscoderInput input = new TranscoderInput(new StringReader(svg));
-        final TranscoderOutput output = new TranscoderOutput(outputStream);
-        final PNGTranscoder converter = new PNGTranscoder();
-        converter.transcode(input, output);
-        byte[] bytes = outputStream.toByteArray();
-        try {
-            outputStream.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return bytes;
-    }
-
     private Image createImage(String svg, float svgScaleRate, float maxWidth, float maxHeight) throws TranscoderException {
         final Image img = new Image(ImageDataFactory.createPng(pngBytesFromSvg(svg)));
         final float width = img.getImageScaledWidth();
@@ -178,14 +163,14 @@ public class PdfReporter implements Reportable {
                 scaleRate = svgScaleRate;
             } else {
                 final float rate = (maxWidth / width);
-                scaleRate = rate > svgScaleRate ? svgScaleRate : rate;
+                scaleRate = Math.min(rate, svgScaleRate);
             }
         } else {
             if (height < maxHeight) {
                 scaleRate = svgScaleRate;
             } else {
                 final float rate = (maxHeight / height);
-                scaleRate = rate > svgScaleRate ? svgScaleRate : rate;
+                scaleRate = Math.min(rate, svgScaleRate);
             }
         }
         img.scale(scaleRate, scaleRate);

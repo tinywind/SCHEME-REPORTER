@@ -62,10 +62,10 @@ public class ExcelReporter implements Reportable {
     public final void generate(SchemaDefinition schema) throws Exception {
         final SchemaVersionProvider schemaVersionProvider = schema.getDatabase().getSchemaVersionProvider();
         final String version = schemaVersionProvider != null ? schemaVersionProvider.version(schema) : null;
-        String revise = "";
+        StringBuilder revise = new StringBuilder();
         File file;
         while ((file = new File(generator.getOutputDirectory(), schema.getName() + (!StringUtils.isEmpty(version) ? "-" + version : "") + revise + ".xlsx")).exists()) {
-            revise += "_";
+            revise.append("_");
         }
 
         log.info("output file: " + file);
