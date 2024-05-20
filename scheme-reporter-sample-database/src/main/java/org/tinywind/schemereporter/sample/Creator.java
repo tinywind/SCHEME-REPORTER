@@ -18,10 +18,8 @@ package org.tinywind.schemereporter.sample;
 
 import org.h2.Driver;
 import org.h2.tools.Server;
-import org.h2.util.StringUtils;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -305,7 +303,7 @@ public class Creator {
                     "\n" +
                     "COMMENT ON COLUMN country_x_language.language_id IS 'reference language';\n" +
                     "\n" +
-                    "CREATE TABLE \"user\"\n" +
+                    "CREATE TABLE user_\n" +
                     "(\n" +
                     "  id BIGSERIAL                                NOT NULL\n" +
                     "    CONSTRAINT user_pkey\n" +
@@ -335,21 +333,21 @@ public class Creator {
                     "  locale              VARCHAR(16)\n" +
                     ");\n" +
                     "\n" +
-                    "COMMENT ON COLUMN \"user\".id IS 'table identifier';\n" +
+                    "COMMENT ON COLUMN user_.id IS 'table identifier';\n" +
                     "\n" +
-                    "COMMENT ON COLUMN \"user\".created_at IS 'timestamp when this record is created';\n" +
+                    "COMMENT ON COLUMN user_.created_at IS 'timestamp when this record is created';\n" +
                     "\n" +
-                    "COMMENT ON COLUMN \"user\".updated_at IS 'timestamp when this record is updated';\n" +
+                    "COMMENT ON COLUMN user_.updated_at IS 'timestamp when this record is updated';\n" +
                     "\n" +
-                    "COMMENT ON COLUMN \"user\".deleted_at IS 'present that this record is deleted';\n" +
+                    "COMMENT ON COLUMN user_.deleted_at IS 'present that this record is deleted';\n" +
                     "\n" +
-                    "COMMENT ON COLUMN \"user\".id IS 'table identifier';\n" +
+                    "COMMENT ON COLUMN user_.id IS 'table identifier';\n" +
                     "\n" +
-                    "COMMENT ON COLUMN \"user\".created_at IS 'timestamp when this record is created';\n" +
+                    "COMMENT ON COLUMN user_.created_at IS 'timestamp when this record is created';\n" +
                     "\n" +
-                    "COMMENT ON COLUMN \"user\".updated_at IS 'timestamp when this record is updated';\n" +
+                    "COMMENT ON COLUMN user_.updated_at IS 'timestamp when this record is updated';\n" +
                     "\n" +
-                    "COMMENT ON COLUMN \"user\".deleted_at IS 'present that this record is deleted';\n" +
+                    "COMMENT ON COLUMN user_.deleted_at IS 'present that this record is deleted';\n" +
                     "\n" +
                     "CREATE TABLE admin\n" +
                     "(\n" +
@@ -363,7 +361,7 @@ public class Creator {
                     "\n" +
                     "  CONSTRAINT admin_id_fkey\n" +
                     "  FOREIGN KEY (id)\n" +
-                    "  REFERENCES \"user\" (id)\n" +
+                    "  REFERENCES user_ (id)\n" +
                     ");\n" +
                     "\n" +
                     "COMMENT ON TABLE admin IS 'user of admin type';\n" +
@@ -384,10 +382,10 @@ public class Creator {
                     "    REFERENCES message,\n" +
                     "  sender_id BIGINT NOT NULL\n" +
                     "    CONSTRAINT message_sender_id_fkey\n" +
-                    "    REFERENCES \"user\",\n" +
+                    "    REFERENCES user_,\n" +
                     "  receiver_id BIGINT NOT NULL\n" +
                     "    CONSTRAINT message_receiver_id_fkey\n" +
-                    "    REFERENCES \"user\",\n" +
+                    "    REFERENCES user_,\n" +
                     "  message_header VARCHAR(1024),\n" +
                     "  message_body   VARCHAR(2048) NOT NULL,\n" +
                     "  message_footer VARCHAR(1024),\n" +
@@ -496,7 +494,7 @@ public class Creator {
                     "\n" +
                     "  CONSTRAINT guide_id_fkey\n" +
                     "  FOREIGN KEY (id)\n" +
-                    "  REFERENCES \"user\"\n" +
+                    "  REFERENCES user_\n" +
                     ");\n" +
                     "\n" +
                     "COMMENT ON TABLE guide IS 'user of guide/guide manager type';\n" +
@@ -581,7 +579,7 @@ public class Creator {
                     "    PRIMARY KEY,\n" +
                     "  user_id    BIGINT NOT NULL\n" +
                     "    CONSTRAINT user_x_interest_guide_user_id_fkey\n" +
-                    "    REFERENCES \"user\",\n" +
+                    "    REFERENCES user_,\n" +
                     "  guide_id BIGINT NOT NULL\n" +
                     "    CONSTRAINT user_x_interest_guide_guide_id_fkey\n" +
                     "    REFERENCES guide,\n" +
@@ -613,7 +611,7 @@ public class Creator {
                     "\n" +
                     "  CONSTRAINT tourist_id_fkey\n" +
                     "  FOREIGN KEY (id)\n" +
-                    "  REFERENCES \"user\"\n" +
+                    "  REFERENCES user_\n" +
                     ");\n" +
                     "\n" +
                     "COMMENT ON TABLE tourist IS 'user of tourist type';\n" +
@@ -845,7 +843,7 @@ public class Creator {
                     "    REFERENCES product_event_type,\n" +
                     "  seller_id             BIGINT\n" +
                     "    CONSTRAINT product_seller_id_fkey\n" +
-                    "    REFERENCES \"user\",\n" +
+                    "    REFERENCES user_,\n" +
                     "  currency_id           BIGINT\n" +
                     "    CONSTRAINT product_currency_id_fkey\n" +
                     "    REFERENCES currency,\n" +
@@ -1089,7 +1087,7 @@ public class Creator {
                     "    PRIMARY KEY,\n" +
                     "  user_id             BIGINT NOT NULL\n" +
                     "    CONSTRAINT product_reservation_user_id_fkey\n" +
-                    "    REFERENCES \"user\",\n" +
+                    "    REFERENCES user_,\n" +
                     "  product_id BIGINT NOT NULL\n" +
                     "    CONSTRAINT product_reservation_product_id_fkey\n" +
                     "    REFERENCES product,\n" +
@@ -1249,7 +1247,7 @@ public class Creator {
                     "    PRIMARY KEY,\n" +
                     "  user_id    BIGINT NOT NULL\n" +
                     "    CONSTRAINT user_x_interest_product_user_id_fkey\n" +
-                    "    REFERENCES \"user\",\n" +
+                    "    REFERENCES user_,\n" +
                     "  product_id BIGINT NOT NULL\n" +
                     "    CONSTRAINT user_x_interest_product_product_id_fkey\n" +
                     "    REFERENCES product,\n" +
@@ -1278,7 +1276,7 @@ public class Creator {
                     "    PRIMARY KEY,\n" +
                     "  user_id     BIGINT NOT NULL\n" +
                     "    CONSTRAINT tour_plan_user_id_fkey\n" +
-                    "    REFERENCES \"user\",\n" +
+                    "    REFERENCES user_,\n" +
                     "  title   VARCHAR(200) NOT NULL,\n" +
                     "  description TEXT,\n" +
                     "  start_at    DATE,\n" +
@@ -1431,7 +1429,7 @@ public class Creator {
                     "    PRIMARY KEY,\n" +
                     "  user_id     BIGINT NOT NULL\n" +
                     "    CONSTRAINT faq_user_id_fkey\n" +
-                    "    REFERENCES \"user\",\n" +
+                    "    REFERENCES user_,\n" +
                     "  question TEXT  NOT NULL,\n" +
                     "  answer   TEXT  NOT NULL,\n" +
                     "  created_at TIMESTAMP DEFAULT now() NOT NULL,\n" +
@@ -1633,7 +1631,7 @@ public class Creator {
                     "    PRIMARY KEY,\n" +
                     "  user_id     BIGINT NOT NULL\n" +
                     "    CONSTRAINT notice_user_id_fkey\n" +
-                    "    REFERENCES \"user\",\n" +
+                    "    REFERENCES user_,\n" +
                     "  title   TEXT   NOT NULL,\n" +
                     "  description TEXT NOT NULL,\n" +
                     "  created_at  TIMESTAMP DEFAULT now() NOT NULL,\n" +
@@ -1826,31 +1824,32 @@ public class Creator {
                     "COMMENT ON COLUMN custom_tour.tour_plan_id IS 'reference tour plan';\n";
 
 
-    public static Connection connection() throws SQLException {
-
-        final String url = "jdbc:h2:tcp://localhost:9092/mem:test;DB_CLOSE_DELAY=-1";
+    public static Connection getConnection() throws SQLException {
+        final String url = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;INIT=CREATE SCHEMA IF NOT EXISTS TEST";
         final Properties properties = new Properties();
         properties.put("user", "sa");
         properties.put("password", "");
-
         return new Driver().connect(url, properties);
     }
 
     public static void create() throws SQLException, IOException {
-        Server.createTcpServer().start();
+        final Server server = Server.createTcpServer().start();
 
-        try (final Connection connect = connection()) {
+        try (final Connection connect = getConnection()) {
             String[] strings = ddl.split(";");
 
             for (String string : strings) {
                 final String query = string.trim();
-                if (StringUtils.isNullOrEmpty(query))
+                if (query.isEmpty()) {
                     continue;
+                }
 
                 try (final Statement statement = connect.createStatement()) {
                     statement.execute(query);
                 }
             }
+        } finally {
+            server.stop();
         }
     }
 }

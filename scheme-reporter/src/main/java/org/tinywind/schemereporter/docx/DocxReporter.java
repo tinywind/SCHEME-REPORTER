@@ -26,9 +26,9 @@ import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import org.docx4j.openpackaging.parts.WordprocessingML.NumberingDefinitionsPart;
 import org.docx4j.toc.TocGenerator;
 import org.docx4j.wml.*;
+import org.jooq.meta.*;
 import org.jooq.tools.JooqLogger;
 import org.jooq.tools.StringUtils;
-import org.jooq.util.*;
 import org.tinywind.schemereporter.Reportable;
 import org.tinywind.schemereporter.jaxb.Generator;
 import org.tinywind.schemereporter.util.TableImage;
@@ -43,25 +43,7 @@ import static org.tinywind.schemereporter.util.TableImage.pngBytesFromSvg;
 public class DocxReporter implements Reportable {
     private static final JooqLogger log = JooqLogger.getLogger(DocxReporter.class);
     private static final ObjectFactory factory = Context.getWmlObjectFactory();
-    private static final String initialNumbering = "<w:numbering xmlns:ve=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:w10=\"urn:schemas-microsoft-com:office:word\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:wne=\"http://schemas.microsoft.com/office/word/2006/wordml\">"
-            + "<w:abstractNum w:abstractNumId=\"0\">"
-            + "<w:nsid w:val=\"2DD860C0\"/>"
-            + "<w:multiLevelType w:val=\"multilevel\"/>"
-            + "<w:tmpl w:val=\"0409001D\"/>"
-            + "<w:lvl w:ilvl=\"0\">"
-            + "<w:start w:val=\"1\"/>"
-            + "<w:numFmt w:val=\"decimal\"/>"
-            + "<w:lvlText w:val=\"(%1)\"/>"
-            + "<w:lvlJc w:val=\"left\"/>"
-            + "<w:pPr>"
-            + "<w:ind w:left=\"720\" w:hanging=\"360\"/>"
-            + "</w:pPr>"
-            + "</w:lvl>"
-            + "</w:abstractNum>"
-            + "<w:num w:numId=\"1\">"
-            + "<w:abstractNumId w:val=\"0\"/>"
-            + "</w:num>"
-            + "</w:numbering>";
+    private static final String initialNumbering = "<w:numbering xmlns:ve=\"http://schemas.openxmlformats.org/markup-compatibility/2006\" xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\" xmlns:m=\"http://schemas.openxmlformats.org/officeDocument/2006/math\" xmlns:v=\"urn:schemas-microsoft-com:vml\" xmlns:wp=\"http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing\" xmlns:w10=\"urn:schemas-microsoft-com:office:word\" xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xmlns:wne=\"http://schemas.microsoft.com/office/word/2006/wordml\">" + "<w:abstractNum w:abstractNumId=\"0\">" + "<w:nsid w:val=\"2DD860C0\"/>" + "<w:multiLevelType w:val=\"multilevel\"/>" + "<w:tmpl w:val=\"0409001D\"/>" + "<w:lvl w:ilvl=\"0\">" + "<w:start w:val=\"1\"/>" + "<w:numFmt w:val=\"decimal\"/>" + "<w:lvlText w:val=\"(%1)\"/>" + "<w:lvlJc w:val=\"left\"/>" + "<w:pPr>" + "<w:ind w:left=\"720\" w:hanging=\"360\"/>" + "</w:pPr>" + "</w:lvl>" + "</w:abstractNum>" + "<w:num w:numId=\"1\">" + "<w:abstractNumId w:val=\"0\"/>" + "</w:num>" + "</w:numbering>";
     private Database database;
     private Generator generator;
     private int imageId = 0;
@@ -90,8 +72,10 @@ public class DocxReporter implements Reportable {
 
         log.info("output file: " + file);
         final File path = file.getParentFile();
-        if (path != null)
-            path.mkdirs();
+        if (path != null) {
+            if (path.mkdirs()) log.info("created path: " + path);
+            else log.error("failed to create path: " + path);
+        }
 
         final WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.createPackage();
         final MainDocumentPart documentPart = wordMLPackage.getMainDocumentPart();
@@ -117,8 +101,7 @@ public class DocxReporter implements Reportable {
             documentPart.addParagraphOfText("");
             numberingId = ndp.restart(numberingId, 0, 1);
             documentPart.addStyledParagraphOfText("Heading2", e.getName());
-            if (!StringUtils.isEmpty(e.getComment()))
-                documentPart.addStyledParagraphOfText("Normal", e.getComment());
+            if (!StringUtils.isEmpty(e.getComment())) documentPart.addStyledParagraphOfText("Normal", e.getComment());
             for (String literal : e.getLiterals())
                 documentPart.addObject(createNumberedParagraph(numberingId, 0, literal));
         }
@@ -182,18 +165,16 @@ public class DocxReporter implements Reportable {
         for (int i = 0; i < e.getColumns().size(); i++) {
             final ColumnDefinition column = e.getColumns().get(i);
             final String type = column.getType().getType();
-            final String typeName = type.equalsIgnoreCase("USER-DEFINED")
-                    ? column.getType().getUserType()
-                    : type + (column.getType().getLength() != 0 ? "(" + column.getType().getLength() + ")" : "");
+            final String typeName = type.equalsIgnoreCase("USER-DEFINED") ? column.getType().getUserType() : type + (column.getType().getLength() != 0 ? "(" + column.getType().getLength() + ")" : "");
             final Tr tr = (Tr) table.getContent().get(i + 1);
 
             ((Tc) tr.getContent().get(INDEX_COLUMN_COLUMN_NAME)).getContent().add(createTextParagraph(column.getName(), JcEnumeration.CENTER));
             ((Tc) tr.getContent().get(INDEX_COLUMN_TYPE)).getContent().add(createTextParagraph(typeName, JcEnumeration.CENTER));
-            ((Tc) tr.getContent().get(INDEX_COLUMN_NULLABLE)).getContent().add(createTextParagraph(column.isNullable() ? "●" : "", JcEnumeration.CENTER));
+            ((Tc) tr.getContent().get(INDEX_COLUMN_NULLABLE)).getContent().add(createTextParagraph(column.getType().isNullable() ? "●" : "", JcEnumeration.CENTER));
             ((Tc) tr.getContent().get(INDEX_COLUMN_PKEY)).getContent().add(createTextParagraph(column.getPrimaryKey() != null ? "●" : "", JcEnumeration.CENTER));
             ((Tc) tr.getContent().get(INDEX_COLUMN_DEFAULTED)).getContent().add(createTextParagraph(column.getType().isDefaulted() ? "●" : "", JcEnumeration.CENTER));
 
-            if (column.getUniqueKeys().size() == 0 || column.getUniqueKeys().stream().noneMatch(pkey -> pkey.getForeignKeys().size() > 0)) {
+            if (column.getUniqueKeys().isEmpty() || column.getUniqueKeys().stream().allMatch(pkey -> pkey.getForeignKeys().isEmpty())) {
                 ((Tc) tr.getContent().get(INDEX_COLUMN_REFERRED)).getContent().add(createTextParagraph(""));
             } else {
                 for (UniqueKeyDefinition key : column.getUniqueKeys()) {
@@ -201,7 +182,7 @@ public class DocxReporter implements Reportable {
                 }
             }
 
-            if (column.getForeignKeys().size() == 0) {
+            if (column.getForeignKeys().isEmpty()) {
                 ((Tc) tr.getContent().get(INDEX_COLUMN_REFER)).getContent().add(createTextParagraph(""));
             } else {
                 writeKeyDescriptions((Tc) tr.getContent().get(INDEX_COLUMN_REFER), column.getForeignKeys(), true);
@@ -272,8 +253,7 @@ public class DocxReporter implements Reportable {
             final StringBuilder text = new StringBuilder("[" + (referenced ? fkey.getReferencedTable().getName() : fkey.getKeyTable().getName()) + "]");
             if (referenced)
                 for (ColumnDefinition column : fkey.getReferencedColumns()) text.append(" ").append(column.getName());
-            else
-                for (ColumnDefinition column : fkey.getKeyColumns()) text.append(" ").append(column.getName());
+            else for (ColumnDefinition column : fkey.getKeyColumns()) text.append(" ").append(column.getName());
 
             if (referenced) {
                 final P p = createTextParagraph("");

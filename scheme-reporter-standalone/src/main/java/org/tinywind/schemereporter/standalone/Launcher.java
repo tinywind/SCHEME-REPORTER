@@ -52,9 +52,10 @@ public class Launcher {
 
         if (args.length > 1) {
             final File jdbcJar = new File(args[1]);
-            final URLClassLoader loader = new URLClassLoader(new URL[]{jdbcJar.toURI().toURL()});
-            @SuppressWarnings("unchecked") final Class<? extends Driver> jdbcClass = (Class<? extends Driver>) loader.loadClass(configuration.getJdbc().getDriverClass());
-            SchemeReporter.generate(configuration, config -> jdbcClass);
+            try (final URLClassLoader loader = new URLClassLoader(new URL[]{jdbcJar.toURI().toURL()})) {
+                @SuppressWarnings("unchecked") final Class<? extends Driver> jdbcClass = (Class<? extends Driver>) loader.loadClass(configuration.getJdbc().getDriverClass());
+                SchemeReporter.generate(configuration, config -> jdbcClass);
+            }
         } else {
             SchemeReporter.generate(configuration);
         }

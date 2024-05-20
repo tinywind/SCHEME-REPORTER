@@ -1,9 +1,9 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
-<%--@elvariable id="enums" type="java.util.List<org.jooq.util.EnumDefinition>"--%>
-<%--@elvariable id="sequences" type="java.util.List<org.jooq.util.SequenceDefinition>"--%>
-<%--@elvariable id="tables" type="java.util.List<org.jooq.util.TableDefinition>"--%>
+<%--@elvariable id="enums" type="java.util.List<org.jooq.meta.EnumDefinition>"--%>
+<%--@elvariable id="sequences" type="java.util.List<org.jooq.meta.SequenceDefinition>"--%>
+<%--@elvariable id="tables" type="java.util.List<org.jooq.meta.TableDefinition>"--%>
 
 <%--@elvariable id="totalRelationSvg" type="java.lang.String"--%>
 <%--@elvariable id="relationSvg" type="java.util.Map<java.lang.String,java.lang.String>"--%>
@@ -95,7 +95,7 @@
                             </c:otherwise>
                         </c:choose>
                         <td style="text-align: center;">
-                            <c:if test="${column.nullable}">
+                            <c:if test="${column.type.nullable}">
                                 <div class="glyphicon glyphicon-ok"></div>
                             </c:if>
                         </td>

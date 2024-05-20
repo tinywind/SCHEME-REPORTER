@@ -27,7 +27,7 @@ import org.tinywind.schemereporter.jaxb.Database;
 import org.tinywind.schemereporter.jaxb.Generator;
 import org.tinywind.schemereporter.jaxb.Jdbc;
 
-import javax.xml.bind.JAXB;
+import jakarta.xml.bind.JAXB;
 import java.io.StringWriter;
 
 import static org.apache.maven.plugins.annotations.LifecyclePhase.GENERATE_SOURCES;
@@ -72,15 +72,13 @@ public class Plugin extends AbstractMojo {
         final StringWriter writer = new StringWriter();
         JAXB.marshal(configuration, writer);
 
-        getLog().debug("Using this configuration:\n" + writer.toString());
+        getLog().debug("Using this configuration:\n" + writer);
 
         try {
             SchemeReporter.generate(configuration);
         } catch (Exception e) {
-            e.printStackTrace();
-            getLog().error(e.getMessage());
-            if (e.getCause() != null)
-                getLog().error("  Cause: " + e.getCause().getMessage());
+            getLog().error(e.getMessage(), e);
+            if (e.getCause() != null) getLog().error("  Cause: " + e.getCause().getMessage());
             return;
         }
 

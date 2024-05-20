@@ -20,12 +20,12 @@ import org.apache.jasper.JspC;
 import org.apache.jasper.compiler.JspUtil;
 import org.apache.jasper.runtime.HttpJspBase;
 import org.apache.tools.ant.util.FileUtils;
+import org.jooq.meta.Database;
+import org.jooq.meta.SchemaDefinition;
+import org.jooq.meta.SchemaVersionProvider;
+import org.jooq.meta.TableDefinition;
 import org.jooq.tools.JooqLogger;
 import org.jooq.tools.StringUtils;
-import org.jooq.util.Database;
-import org.jooq.util.SchemaDefinition;
-import org.jooq.util.SchemaVersionProvider;
-import org.jooq.util.TableDefinition;
 import org.tinywind.schemereporter.Reportable;
 import org.tinywind.schemereporter.jaxb.Generator;
 
@@ -38,6 +38,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static org.tinywind.schemereporter.util.TableImage.relationSvg;
 import static org.tinywind.schemereporter.util.TableImage.totalRelationSvg;
@@ -70,7 +71,9 @@ public class HtmlReporter implements Reportable, Closeable {
             if (!valid(tempDir)) {
                 log.warn("invalid System.getProperty(\"java.io.tmpdir\"): " + System.getProperty("java.io.tmpdir"));
                 tempDir = new File("scheme-reporter" + System.nanoTime()).getAbsoluteFile();
-                tempDir.mkdirs();
+
+                if (tempDir.mkdirs()) log.info("created tempDir: " + tempDir);
+                else log.error("failed to create tempDir: " + tempDir);
             }
 
             final File tempFile = Files.createTempFile(tempDir.toPath(), "template", ".jsp").toFile();
@@ -78,11 +81,10 @@ public class HtmlReporter implements Reportable, Closeable {
             final FileWriter writer = new FileWriter(tempFile);
             final char[] buffer = new char[1024 * 1024];
             final InputStreamReader reader = StringUtils.isEmpty(template)
-                    ? new InputStreamReader(getClass().getClassLoader().getResourceAsStream("asset/default.jsp"))
+                    ? new InputStreamReader(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("asset/default.jsp")))
                     : new FileReader(template);
             int read;
-            while ((read = reader.read(buffer)) >= 0)
-                writer.write(buffer, 0, read);
+            while ((read = reader.read(buffer)) >= 0) writer.write(buffer, 0, read);
             writer.flush();
 
             try {
@@ -112,8 +114,10 @@ public class HtmlReporter implements Reportable, Closeable {
 
         log.info("output file: " + file);
         final File path = file.getParentFile();
-        if (path != null)
-            path.mkdirs();
+        if (path != null) {
+            if (path.mkdirs()) log.info("created path: " + path);
+            else log.error("failed to create path: " + path);
+        }
 
         final HttpServletRequest request = new SimpleServletRequest();
         final HttpServletResponse response = new SimpleServletResponse(file, "utf-8");
@@ -146,8 +150,7 @@ public class HtmlReporter implements Reportable, Closeable {
     private boolean valid(File file) {
         String[] paths = file.getAbsolutePath().replaceAll("\\\\", "/").split("/");
 
-        if (paths.length == 0)
-            return true;
+        if (paths.length == 0) return true;
 
         File root = new File(File.separator + paths[0] + File.separator);
 
@@ -155,13 +158,11 @@ public class HtmlReporter implements Reportable, Closeable {
     }
 
     private boolean valid(File dir, String[] paths) {
-        if (paths.length == 0)
-            return true;
+        if (paths.length == 0) return true;
 
         File[] listFiles = dir.listFiles();
 
-        if (listFiles == null)
-            return false;
+        if (listFiles == null) return false;
 
         for (File file : listFiles)
             if (file.getName().equalsIgnoreCase(paths[0]))
@@ -178,7 +179,7 @@ public class HtmlReporter implements Reportable, Closeable {
             throw new RuntimeException("failed: JspCompile");
         }
 
-        final URLClassLoader jspClassLoader = new URLClassLoader(new URL[]{ tempDir.toURI().toURL() }, this.getClass().getClassLoader());
+        final URLClassLoader jspClassLoader = new URLClassLoader(new URL[]{tempDir.toURI().toURL()}, this.getClass().getClassLoader());
         final String jspClassName = (StringUtils.isEmpty(JSP_PACKAGE_NAME) ? "" : JSP_PACKAGE_NAME + ".") + getServletClassName(templateFile.getName());
         final Class<?> klass = Class.forName(jspClassName, true, jspClassLoader);
         return (HttpJspBase) klass.getConstructor().newInstance();
@@ -202,15 +203,13 @@ public class HtmlReporter implements Reportable, Closeable {
 
         final File uriRoot = FileUtils.getFileUtils().resolveFile(jspc.getProject() == null ? null : jspc.getProject().getBaseDir(), URI_ROOT);
         File jspFile = new File(filePath);
-        if (!jspFile.isAbsolute())
-            jspFile = new File(uriRoot, filePath);
+        if (!jspFile.isAbsolute()) jspFile = new File(uriRoot, filePath);
 
         final String jspAbsolutePath = jspFile.getAbsolutePath();
         final String uriRootAbsolutePath = uriRoot.getAbsolutePath();
         if (jspAbsolutePath.startsWith(uriRootAbsolutePath))
             filePath = jspAbsolutePath.substring(uriRootAbsolutePath.length());
-        if (filePath.startsWith("." + File.separatorChar))
-            filePath = filePath.substring(2);
+        if (filePath.startsWith("." + File.separatorChar)) filePath = filePath.substring(2);
 
         return new File(outputDir + "/" + packageName.replaceAll("[.]", "/"), getServletClassName(filePath).replaceAll("[.]", "/") + ".class");
     }
@@ -219,15 +218,14 @@ public class HtmlReporter implements Reportable, Closeable {
         jspUri = jspUri.replaceAll("\\\\", "/");
         StringBuilder result = new StringBuilder();
 
-        for (int index = jspUri.indexOf("/", 0), last = 0; index >= 0; index = jspUri.indexOf("/", index + 1)) {
+        for (int index = jspUri.indexOf("/"), last = 0; index >= 0; index = jspUri.indexOf("/", index + 1)) {
             result.append(index == 0 ? "" : JspUtil.makeJavaIdentifier(jspUri.substring(last, index)) + ".");
             last = index + 1;
         }
 
         String fileName = jspUri;
         int index = jspUri.lastIndexOf("/");
-        if (index >= 0)
-            fileName = jspUri.substring(index + 1);
+        if (index >= 0) fileName = jspUri.substring(index + 1);
         int iSep = fileName.lastIndexOf(47) + 1;
 
         return result + JspUtil.makeJavaIdentifier(fileName.substring(iSep));

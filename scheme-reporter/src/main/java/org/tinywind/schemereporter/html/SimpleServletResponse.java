@@ -24,7 +24,7 @@ import java.util.Collection;
 import java.util.Locale;
 
 public class SimpleServletResponse implements HttpServletResponse {
-    private PrintWriter writer;
+    private final PrintWriter writer;
 
     public SimpleServletResponse(File file, String encoding) throws IOException {
         writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), encoding)));

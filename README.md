@@ -8,7 +8,7 @@ create reporter from remote database
             <plugin>
                 <groupId>org.tinywind</groupId>
                 <artifactId>scheme-reporter-maven</artifactId>
-                <version>0.5.0</version>
+                <version>1.0.0</version>
                 <executions>
                     <execution>
                         <phase>none</phase>
@@ -19,7 +19,7 @@ create reporter from remote database
                         <driverClass>org.h2.Driver</driverClass>
                     </jdbc>
                     <database>
-                        <url>jdbc:h2:tcp://localhost:9092/mem:test;DB_CLOSE_DELAY=-1</url>
+                        <url>jdbc:h2:mem:test;DB_CLOSE_DELAY=-1</url>
                         <user>sa</user>
                         <password></password>
                         <includes>.*</includes>
@@ -38,7 +38,7 @@ create reporter from remote database
                     <dependency>
                         <groupId>com.h2database</groupId>
                         <artifactId>h2</artifactId>
-                        <version>1.4.196</version>
+                        <version>2.2.224</version>
                     </dependency>
                 </dependencies>
             </plugin>

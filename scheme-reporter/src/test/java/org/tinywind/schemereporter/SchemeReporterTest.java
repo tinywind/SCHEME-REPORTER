@@ -18,6 +18,8 @@ package org.tinywind.schemereporter;
 
 import org.apache.tools.ant.filters.StringInputStream;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.tinywind.schemereporter.sample.Creator;
 
 import java.io.File;
@@ -25,22 +27,21 @@ import java.io.IOException;
 import java.sql.SQLException;
 
 public class SchemeReporterTest {
-    private final String header = "" +
-            "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" +
+    private static final Logger log = LoggerFactory.getLogger(SchemeReporterTest.class);
+    private final String header = "<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>" +
             "<configuration>" +
             "    <jdbc>" +
             "        <driverClass>org.h2.Driver</driverClass>" +
             "    </jdbc>" +
             "    <database>" +
-            "        <url>jdbc:h2:tcp://localhost:9092/mem:test;DB_CLOSE_DELAY=-1</url>" +
+            "        <url>jdbc:h2:mem:test;DB_CLOSE_DELAY=-1</url>" +
             "        <user>sa</user>" +
             "        <password></password>" +
             "        <includes>.*</includes>" +
             "        <inputSchema>PUBLIC</inputSchema>" +
             "    </database>" +
             "    <generator>";
-    private final String tail = "" +
-            "        <outputDirectory>doc</outputDirectory>" +
+    private final String tail = "        <outputDirectory>doc</outputDirectory>" +
             "    </generator>" +
             "</configuration>";
 
@@ -63,7 +64,7 @@ public class SchemeReporterTest {
             SchemeReporter.generate(SchemeReporter.load(new StringInputStream(docxConfig)));
             assert new File("doc/PUBLIC.docx").exists();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error", e);
             assert false;
         } finally {
             new File("doc/PUBLIC.html").deleteOnExit();

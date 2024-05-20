@@ -16,19 +16,21 @@
  */
 package org.tinywind.schemereporter.util;
 
+import guru.nidi.graphviz.attribute.Attributes;
 import guru.nidi.graphviz.attribute.Color;
-import guru.nidi.graphviz.attribute.RankDir;
-import guru.nidi.graphviz.attribute.Shape;
+import guru.nidi.graphviz.attribute.Rank;
+import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
-import guru.nidi.graphviz.model.Graph;
-import guru.nidi.graphviz.model.Node;
-import javafx.util.Pair;
+import guru.nidi.graphviz.model.MutableGraph;
+import guru.nidi.graphviz.model.MutableNode;
 import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
-import org.jooq.util.Definition;
-import org.jooq.util.TableDefinition;
+import org.apache.commons.math3.util.Pair;
+import org.jooq.meta.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,68 +41,89 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static guru.nidi.graphviz.model.Factory.graph;
-import static guru.nidi.graphviz.model.Factory.node;
+import static guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT;
+import static guru.nidi.graphviz.model.Factory.*;
 
 public class TableImage {
+    private static final Logger log = LoggerFactory.getLogger(TableImage.class);
+
     public static Map<String, String> relationSvg(List<TableDefinition> tables) {
         final Map<String, String> relationSvg = new HashMap<>();
         for (TableDefinition table : tables) {
             final String cTable = table.getName();
-            final Node[] cNode = {createNode(cTable).attr("weight", 8).attr("fillcolor", "grey75")};
+            MutableNode node = createNode(cTable);
+            node.add(Color.RED);
+            node.applyTo(Attributes.attr("weight", 8));
+            node.applyTo(Attributes.attr("fillcolor", "grey75"));
 
-            final Map<String, Node> refer = new HashMap<>();
-            final Map<String, Node> referred = new HashMap<>();
+            final Map<String, MutableNode> refer = new HashMap<>();
+            final Map<String, MutableNode> referred = new HashMap<>();
 
-            table.getColumns().forEach(column -> {
-                column.getForeignKeys().forEach(fkey -> {
+            for (ColumnDefinition column : table.getColumns()) {
+                for (ForeignKeyDefinition fkey : column.getForeignKeys()) {
                     final String rTable = fkey.getReferencedTable().getName();
                     refer.putIfAbsent(rTable, createReferNode(rTable));
-                });
-                column.getUniqueKeys().forEach(ukey -> ukey.getForeignKeys().forEach(fkey -> {
-                    final String rTable = fkey.getKeyTable().getName();
-                    if (referred.get(rTable) == null && !cTable.equals(rTable))
-                        referred.put(rTable, createReferNode(rTable).link(cNode[0]));
-                }));
-            });
+                }
 
-            refer.values().stream().distinct().forEach(rNode -> cNode[0] = cNode[0].link(rNode));
-            final Graph g = graph(cTable).directed().node(cNode[0]);
-            referred.values().stream().distinct().forEach(g::node);
+                for (UniqueKeyDefinition ukey : column.getUniqueKeys()) {
+                    for (ForeignKeyDefinition fkey : ukey.getForeignKeys()) {
+                        final String rTable = fkey.getKeyTable().getName();
+                        if (referred.get(rTable) == null && !cTable.equals(rTable)) {
+                            MutableNode referNode = createReferNode(rTable);
+                            referred.put(rTable, referNode.addLink(to(node)));
+                        }
+                    }
+                }
+            }
 
-            relationSvg.put(cTable, Graphviz.fromGraph(g).createSvg());
+            for (MutableNode rNode : refer.values().stream().distinct().toList()) node = node.addLink(to(rNode));
+            final MutableGraph g = mutGraph(cTable).setDirected(true).add(node);
+            referred.values().forEach(g::add);
+
+            relationSvg.put(cTable, Graphviz.fromGraph(g.toImmutable()).render(Format.SVG).toString());
         }
         return relationSvg;
     }
 
     public static String totalRelationSvg(List<TableDefinition> tables) {
-        final Map<String, Node> nodeMap = tables.stream().collect(Collectors.toMap(Definition::getName, table -> createReferNode(table.getName())));
-        final Graph g = graph("totalRelationSvg").directed()
-                .general().attr(RankDir.LEFT_TO_RIGHT);
+        final Map<String, MutableNode> nodeMap = tables.stream().collect(Collectors.toMap(Definition::getName, table -> createReferNode(table.getName())));
+        final MutableGraph g = mutGraph("totalRelationSvg").setDirected(true);
 
         final List<Pair<String, String>> linkedList = new ArrayList<>();
         tables.forEach(table -> table.getColumns().forEach(column -> column.getForeignKeys().forEach(fkey -> {
-            if (linkedList.contains(new Pair<>(table.getName(), fkey.getReferencedTable().getName()))) return;
-            final Node linked = nodeMap.get(fkey.getReferencedTable().getName());
-            nodeMap.put(table.getName(), nodeMap.get(table.getName()).link(linked));
-            linkedList.add(new Pair<>(table.getName(), fkey.getReferencedTable().getName()));
+            if (linkedList.contains(Pair.create(table.getName(), fkey.getReferencedTable().getName()))) return;
+            final MutableNode linked = nodeMap.get(fkey.getReferencedTable().getName());
+            nodeMap.put(table.getName(), nodeMap.get(table.getName()).addLink(to(linked)));
+            linkedList.add(Pair.create(table.getName(), fkey.getReferencedTable().getName()));
         })));
 
-        nodeMap.forEach((name, node) -> g.node(node));
-        return Graphviz.fromGraph(g).createSvg();
+        nodeMap.values().forEach(g::add);
+        return Graphviz.fromGraph(g.toImmutable().graphAttr().with(Rank.dir(LEFT_TO_RIGHT))).render(Format.SVG).toString();
     }
 
-    private static Node createNode(String name) {
-        return node(name).attr(Shape.RECTANGLE).attr(Color.BLACK)
-                .attr("fontname", "Helvetica").attr("fontsize", 10).attr("fontcolor", "black")
-                .attr("height", 0.2).attr("width", 0.4).attr("style", "filled");
+    private static MutableNode createNode(String name) {
+        final MutableNode node = mutNode(name);
+        node.applyTo(Attributes.attr("shape", "rectangle"));
+        node.applyTo(Attributes.attr("color", "black"));
+        node.applyTo(Attributes.attr("fontname", "Helvetica"));
+        node.applyTo(Attributes.attr("fontsize", 10));
+        node.applyTo(Attributes.attr("fontcolor", "black"));
+        node.applyTo(Attributes.attr("height", 0.2));
+        node.applyTo(Attributes.attr("width", 0.4));
+        node.applyTo(Attributes.attr("style", "filled"));
+        return node;
     }
 
-    private static Node createReferNode(String name) {
-        return createNode(name).attr("fillcolor", "white").attr("URL", "#table$" + name);
+    private static MutableNode createReferNode(String name) {
+        final MutableNode node = createNode(name);
+        node.applyTo(Attributes.attr("fillcolor", "white"));
+        node.applyTo(Attributes.attr("URL", "#table$" + name));
+        return node;
     }
 
     public static byte[] pngBytesFromSvg(String svg) throws TranscoderException {
+        svg = svg.replaceAll("stroke=\"transparent\"", "stroke=\"none\"");
+
         final ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         final TranscoderInput input = new TranscoderInput(new StringReader(svg));
         final TranscoderOutput output = new TranscoderOutput(outputStream);
@@ -110,7 +133,7 @@ public class TableImage {
         try {
             outputStream.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Error while closing outputStream", e);
         }
         return bytes;
     }

@@ -16,8 +16,8 @@
  */
 package org.tinywind.schemereporter;
 
-import org.jooq.util.Database;
-import org.jooq.util.SchemaDefinition;
+import org.jooq.meta.Database;
+import org.jooq.meta.SchemaDefinition;
 import org.tinywind.schemereporter.jaxb.Generator;
 
 public interface Reportable {

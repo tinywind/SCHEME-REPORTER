@@ -16,21 +16,21 @@
  */
 package org.tinywind.schemereporter;
 
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.Unmarshaller;
+import jakarta.xml.bind.annotation.XmlElement;
+import org.jooq.meta.Databases;
+import org.jooq.meta.SchemaDefinition;
+import org.jooq.meta.jaxb.CatalogMappingType;
+import org.jooq.meta.jaxb.SchemaMappingType;
 import org.jooq.tools.JooqLogger;
 import org.jooq.tools.jdbc.JDBCUtils;
-import org.jooq.util.Databases;
-import org.jooq.util.SchemaDefinition;
-import org.jooq.util.jaxb.Catalog;
-import org.jooq.util.jaxb.Schema;
 import org.tinywind.schemereporter.jaxb.Configuration;
 import org.tinywind.schemereporter.jaxb.Database;
 import org.tinywind.schemereporter.jaxb.Generator;
 import org.tinywind.schemereporter.jaxb.Jdbc;
 
 import javax.xml.XMLConstants;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.Unmarshaller;
-import javax.xml.bind.annotation.XmlElement;
 import javax.xml.validation.SchemaFactory;
 import java.io.*;
 import java.lang.reflect.Field;
@@ -58,11 +58,9 @@ public class SchemeReporter {
         for (String arg : args) {
             InputStream in = SchemeReporter.class.getResourceAsStream(arg);
             try {
-                if (in == null && !arg.startsWith("/"))
-                    in = SchemeReporter.class.getResourceAsStream("/" + arg);
+                if (in == null && !arg.startsWith("/")) in = SchemeReporter.class.getResourceAsStream("/" + arg);
 
-                if (in == null && new File(arg).exists())
-                    in = new FileInputStream(new File(arg));
+                if (in == null && new File(arg).exists()) in = new FileInputStream(arg);
 
                 if (in == null) {
                     log.error("Cannot find " + arg + " on classpath, or in directory " + new File(".").getCanonicalPath());
@@ -93,21 +91,16 @@ public class SchemeReporter {
 
     private static boolean isNull(Object... objects) {
         for (Object o : objects)
-            if (o == null)
-                return true;
+            if (o == null) return true;
         return false;
     }
 
     public static boolean isCorrected(Configuration configuration) {
         final Jdbc jdbc = configuration.getJdbc();
         final Database database = configuration.getDatabase();
-        if (isNull(jdbc, database))
-            return false;
+        if (isNull(jdbc, database)) return false;
 
-        if (isNull(jdbc.getDriverClass(), database.getUrl(), database.getUser(), database.getPassword()))
-            return false;
-
-        return true;
+        return !isNull(jdbc.getDriverClass(), database.getUrl(), database.getUser(), database.getPassword());
     }
 
     private static void setDefault(Object o, String fieldName) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
@@ -119,16 +112,14 @@ public class SchemeReporter {
     }
 
     private static void setDefault(Configuration configuration) throws NoSuchFieldException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        if (configuration.getGenerator() == null)
-            configuration.setGenerator(new Generator());
+        if (configuration.getGenerator() == null) configuration.setGenerator(new Generator());
 
         final Generator generator = configuration.getGenerator();
         setDefault(generator, "reporterClass");
         setDefault(generator, "outputDirectory");
         setDefault(generator, "template");
 
-        if (configuration.getDatabase() == null)
-            configuration.setDatabase(new Database());
+        if (configuration.getDatabase() == null) configuration.setDatabase(new Database());
 
         final Database database = configuration.getDatabase();
         setDefault(database, "includes");
@@ -149,7 +140,7 @@ public class SchemeReporter {
         try {
             setDefault(configuration);
         } catch (NoSuchFieldException e) {
-            e.printStackTrace();
+            log.error("Incorrect xml", e);
         }
 
         final Class<? extends Driver> driverClass = jdbcClassExtractor.extract(configuration);
@@ -159,15 +150,16 @@ public class SchemeReporter {
         properties.put("password", databaseConfig.getPassword());
 
         final Connection connection = driverClass.newInstance().connect(databaseConfig.getUrl(), properties);
-        final org.jooq.util.Database database = Databases.databaseClass(JDBCUtils.dialect(databaseConfig.getUrl())).newInstance();
+        final org.jooq.meta.Database database = Databases.databaseClass(JDBCUtils.dialect(databaseConfig.getUrl())).newInstance();
 
-        final Catalog catalog = new Catalog();
+        final CatalogMappingType catalog = new CatalogMappingType();
         catalog.setInputCatalog("");
         catalog.setOutputCatalog("");
         catalog.setOutputCatalogToDefault(false);
-        catalog.setSchemata(Collections.singletonList(new Schema()));
+        catalog.setSchemata(Collections.singletonList(new SchemaMappingType()));
 
         database.setConnection(connection);
+        database.setConfiguredCatalogs(Collections.singletonList(new CatalogMappingType()));
         database.setConfiguredCatalogs(Collections.singletonList(catalog));
         database.setConfiguredSchemata(new ArrayList<>());
         database.setConfiguredEnumTypes(new ArrayList<>());
@@ -193,9 +185,7 @@ public class SchemeReporter {
         reporter.setDatabase(database);
         reporter.setGenerator(generator);
 
-        final List<String> inputSchemaNames = databaseConfig.getInputSchema() != null
-                ? Arrays.asList(databaseConfig.getInputSchema().toLowerCase().split("[|]"))
-                : null;
+        final List<String> inputSchemaNames = databaseConfig.getInputSchema() != null ? Arrays.asList(databaseConfig.getInputSchema().toLowerCase().split("[|]")) : null;
         for (SchemaDefinition schemaDefinition : database.getSchemata()) {
             if (inputSchemaNames != null && !inputSchemaNames.contains(schemaDefinition.getName().toLowerCase()) && !inputSchemaNames.contains(schemaDefinition.getOutputName().toLowerCase()))
                 continue;
@@ -207,8 +197,7 @@ public class SchemeReporter {
             }
         }
 
-        if (reporter instanceof Closeable)
-            ((Closeable) reporter).close();
+        if (reporter instanceof Closeable) ((Closeable) reporter).close();
     }
 
     public static Configuration load(InputStream in) throws IOException {
@@ -217,13 +206,11 @@ public class SchemeReporter {
         for (int len; (len = in.read(buffer)) >= 0; )
             out.write(buffer, 0, len);
 
-        final String xml = out.toString()
-                .replaceAll("<(\\w+:)?configuration\\s+xmlns(:\\w+)?=\"[^\"]*\"[^>]*>", "<$1configuration xmlns$2=\"" + REPO_SCHEME_REPORTER_XSD + "\">")
-                .replace("<configuration>", "<configuration xmlns=\"" + REPO_SCHEME_REPORTER_XSD + "\">");
+        final String xml = out.toString().replaceAll("<(\\w+:)?configuration\\s+xmlns(:\\w+)?=\"[^\"]*\"[^>]*>", "<$1configuration xmlns$2=\"" + REPO_SCHEME_REPORTER_XSD + "\">").replace("<configuration>", "<configuration xmlns=\"" + REPO_SCHEME_REPORTER_XSD + "\">");
         try {
             out.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Error while closing outputStream", e);
         }
 
         try {

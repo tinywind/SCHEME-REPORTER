@@ -17,11 +17,10 @@
 package org.tinywind.schemereporter.excel;
 
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.jooq.tools.JooqLogger;
 import org.jooq.tools.StringUtils;
-import org.jooq.util.*;
+import org.jooq.meta.*;
 import org.tinywind.schemereporter.Reportable;
 import org.tinywind.schemereporter.jaxb.Generator;
 import org.tinywind.schemereporter.util.TableImage;
@@ -70,8 +69,10 @@ public class ExcelReporter implements Reportable {
 
         log.info("output file: " + file);
         final File path = file.getParentFile();
-        if (path != null)
-            path.mkdirs();
+        if (path != null) {
+            if (path.mkdirs()) log.info("created path: " + path);
+            else log.error("failed to create path: " + path);
+        }
 
         final List<EnumDefinition> enums = database.getEnums(schema);
         final List<TableDefinition> tables = database.getTables(schema);
@@ -84,20 +85,20 @@ public class ExcelReporter implements Reportable {
             final CellStyle leadStyle = workbook.createCellStyle();
             final CellStyle headerStyle = workbook.createCellStyle();
 
-            style.setBorderTop(XSSFCellStyle.BORDER_THIN);
-            style.setBorderRight(XSSFCellStyle.BORDER_THIN);
-            style.setBorderBottom(XSSFCellStyle.BORDER_THIN);
-            style.setBorderLeft(XSSFCellStyle.BORDER_THIN);
+            style.setBorderTop(BorderStyle.THIN);
+            style.setBorderRight(BorderStyle.THIN);
+            style.setBorderBottom(BorderStyle.THIN);
+            style.setBorderLeft(BorderStyle.THIN);
             style.setTopBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
             style.setRightBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
             style.setBottomBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
             style.setLeftBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
             style.setWrapText(true);
 
-            headerStyle.setBorderTop(XSSFCellStyle.BORDER_THIN);
-            headerStyle.setBorderRight(XSSFCellStyle.BORDER_THIN);
-            headerStyle.setBorderBottom(XSSFCellStyle.BORDER_THIN);
-            headerStyle.setBorderLeft(XSSFCellStyle.BORDER_THIN);
+            headerStyle.setBorderTop(BorderStyle.THIN);
+            headerStyle.setBorderRight(BorderStyle.THIN);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
+            headerStyle.setBorderLeft(BorderStyle.THIN);
             headerStyle.setTopBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
             headerStyle.setRightBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
             headerStyle.setBottomBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
@@ -105,7 +106,7 @@ public class ExcelReporter implements Reportable {
             headerStyle.setWrapText(true);
             headerStyle.setAlignment(HorizontalAlignment.CENTER);
             headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-            headerStyle.setFillPattern(CellStyle.SOLID_FOREGROUND);
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
             final Font font = workbook.createFont();
             font.setFontHeightInPoints((short) 12);
@@ -130,7 +131,7 @@ public class ExcelReporter implements Reportable {
                     create(row, INDEX_TYPE, column.getType().getType().equals("USER-DEFINED")
                             ? column.getType().getUserType()
                             : column.getType().getType() + (column.getType().getLength() > 0 ? " (" + column.getType().getLength() + ")" : ""), style);
-                    create(row, INDEX_NULLABLE, column.isNullable() ? "O" : "", style);
+                    create(row, INDEX_NULLABLE, column.getType().isNullable() ? "O" : "", style);
                     create(row, INDEX_PKEY, column.getPrimaryKey() != null ? "O" : "", style);
 
                     final StringBuilder ukeyString = new StringBuilder();
