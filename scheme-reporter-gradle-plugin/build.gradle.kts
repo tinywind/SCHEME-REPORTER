@@ -10,6 +10,7 @@ plugins {
     kotlin("jvm") version "1.9.22"
     `java-gradle-plugin`
     `maven-publish`
+    id("com.gradle.plugin-publish") version "1.2.1"
 }
 
 dependencies {
@@ -21,10 +22,15 @@ dependencies {
 }
 
 gradlePlugin {
+    website.set("https://github.com/tinywind/SCHEME-REPORTER")
+    vcsUrl.set("https://github.com/tinywind/SCHEME-REPORTER")
     plugins {
         create("schemeReporterPlugin") {
             id = "org.tinywind.scheme-reporter"
             implementationClass = "org.tinywind.SchemeReporterPlugin"
+            displayName = "Scheme Reporter plugin"
+            description = "Gradle plugin to generate scheme report"
+            tags.set(listOf("database", "scheme", "report", "plugin"))
         }
     }
 }
