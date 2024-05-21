@@ -70,13 +70,13 @@ public class SchemeReporterTest {
             SchemeReporter.generate(SchemeReporter.load(new StringInputStream(docxConfig)));
 
             files.forEach(file -> {
-//                assert file.exists();
+                assert file.exists();
             });
         } catch (Exception e) {
             log.error("Error", e);
             assert false;
         } finally {
-//            files.forEach(File::deleteOnExit);
+            files.forEach(File::deleteOnExit);
         }
     }
 }
