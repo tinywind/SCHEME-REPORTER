@@ -83,7 +83,7 @@ public class HtmlReporter implements Reportable {
             final ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
             templateResolver.setPrefix("/asset/");
             templateResolver.setSuffix(".html");
-            templateResolver.setTemplateMode("HTML5");
+            templateResolver.setTemplateMode("HTML");
             templateResolver.setCharacterEncoding("UTF-8");
             return new TemplateData(templateResolver, "default");
         }
@@ -92,7 +92,7 @@ public class HtmlReporter implements Reportable {
         final FileTemplateResolver templateResolver = new FileTemplateResolver();
         templateResolver.setPrefix(templateFile.getParent() + "/");
         templateResolver.setSuffix(templateFile.getName().lastIndexOf(".") == -1 ? "" : templateFile.getName().substring(templateFile.getName().lastIndexOf(".")));
-        templateResolver.setTemplateMode("HTML5");
+        templateResolver.setTemplateMode("HTML");
         templateResolver.setCharacterEncoding("UTF-8");
         return new TemplateData(templateResolver, templateFile.getName().lastIndexOf(".") == -1 ? templateFile.getName() : templateFile.getName().substring(0, templateFile.getName().lastIndexOf(".")));
     }

@@ -53,8 +53,8 @@ public class TableImage {
             final String cTable = table.getName();
             MutableNode node = createNode(cTable);
             node.add(Color.RED);
-            node.applyTo(Attributes.attr("weight", 8));
-            node.applyTo(Attributes.attr("fillcolor", "grey75"));
+            node.add(Attributes.attr("weight", 8));
+            node.add(Attributes.attr("fillcolor", "grey75"));
 
             final Map<String, MutableNode> refer = new HashMap<>();
             final Map<String, MutableNode> referred = new HashMap<>();
@@ -65,7 +65,7 @@ public class TableImage {
                     refer.putIfAbsent(rTable, createReferNode(rTable));
                 }
 
-                for (UniqueKeyDefinition ukey : column.getUniqueKeys()) {
+                for (UniqueKeyDefinition ukey : column.getKeys()) {
                     for (ForeignKeyDefinition fkey : ukey.getForeignKeys()) {
                         final String rTable = fkey.getKeyTable().getName();
                         if (referred.get(rTable) == null && !cTable.equals(rTable)) {
@@ -103,21 +103,21 @@ public class TableImage {
 
     private static MutableNode createNode(String name) {
         final MutableNode node = mutNode(name);
-        node.applyTo(Attributes.attr("shape", "rectangle"));
-        node.applyTo(Attributes.attr("color", "black"));
-        node.applyTo(Attributes.attr("fontname", "Helvetica"));
-        node.applyTo(Attributes.attr("fontsize", 10));
-        node.applyTo(Attributes.attr("fontcolor", "black"));
-        node.applyTo(Attributes.attr("height", 0.2));
-        node.applyTo(Attributes.attr("width", 0.4));
-        node.applyTo(Attributes.attr("style", "filled"));
+        node.add(Attributes.attr("shape", "box"));
+        node.add(Attributes.attr("color", "black"));
+        node.add(Attributes.attr("fontname", "Helvetica"));
+        node.add(Attributes.attr("fontsize", 10));
+        node.add(Attributes.attr("fontcolor", "black"));
+        node.add(Attributes.attr("height", 0.2));
+        node.add(Attributes.attr("width", 0.4));
+        node.add(Attributes.attr("style", "filled"));
         return node;
     }
 
     private static MutableNode createReferNode(String name) {
         final MutableNode node = createNode(name);
-        node.applyTo(Attributes.attr("fillcolor", "white"));
-        node.applyTo(Attributes.attr("URL", "#table$" + name));
+        node.add(Attributes.attr("fillcolor", "white"));
+        node.add(Attributes.attr("URL", "#table$" + name));
         return node;
     }
 

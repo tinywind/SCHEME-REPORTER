@@ -24,11 +24,9 @@
 <body>
 <div class="container">
     <div th:if="${enums.size() > 0}">
-        <a name="EnumDefinition"></a>
-        <h3> Enum Definition </h3>
+        <h3 id="EnumDefinition"> Enum Definition </h3>
         <div th:each="enumElement, status : ${enums}">
-            <a th:name="'enum' + ${enumElement.name}"></a>
-            <div class="panel panel-default">
+            <div th:id="'enum$' + ${enumElement.name}" class="panel panel-default">
                 <div class="panel-heading">
                     <h4 th:text="${enumElement.name}">
                         <small><i th:text="${enumElement.comment}"></i></small>
@@ -47,12 +45,10 @@
         </div>
     </div>
 
-    <a name="TableDefinition"></a>
-    <h3> Table Definition </h3>
+    <h3 id="TableDefinition"> Table Definition </h3>
     <div class="svg-container" th:utext="${totalRelationSvg}"></div>
     <div th:each="tableElement, status : ${tables}">
-        <a th:name="'table' + ${tableElement.name}"></a>
-        <div class="panel panel-default">
+        <div th:id="'table$' + ${tableElement.name}" class="panel panel-default">
             <div class="panel-heading">
                 <h4 th:text="${tableElement.name}">
                     <small><i th:text="${tableElement.comment}"></i></small>
@@ -102,7 +98,7 @@
                         <div th:if="${column.type.defaulted}" class="glyphicon glyphicon-ok"></div>
                     </td>
                     <td>
-                        <div th:each="key : ${column.uniqueKeys}">
+                        <div th:each="key : ${column.keys}">
                             <div th:each="fkey : ${key.foreignKeys}" class="text-ellipsis"
                                  th:title="'[' + ${fkey.keyTable.name} + ']' + ${utils.listJoin(fkey.keyColumns, ' ', 'name')}">
                                 [<span th:text="${fkey.keyTable.name}"></span>]
@@ -112,7 +108,7 @@
                     </td>
                     <td>
                         <div th:each="fkey : ${column.foreignKeys}">
-                            <a th:href="'#key' + ${fkey.referencedKey.name}" class="text-ellipsis"
+                            <a th:href="'#key$' + ${fkey.referencedKey.name}" class="text-ellipsis"
                                th:title="'[' + ${fkey.referencedTable.name} + ']' + ${utils.listJoin(fkey.referencedColumns, ' ', 'name')}">
                                 [<span th:text="${fkey.referencedTable.name}"></span>]
                                 <span th:each="col : ${fkey.referencedColumns}" th:text="${col.name}"></span>
@@ -122,7 +118,7 @@
                 </tr>
                 </tbody>
             </table>
-            <div th:if="${tableElement.uniqueKeys.size() > 0}">
+            <div th:if="${tableElement.keys.size() > 0}">
                 <table class="table table-condensed" style="table-layout: fixed;">
                     <colgroup>
                         <col style="width: 20%"/>
@@ -137,10 +133,8 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:each="ukey : ${tableElement.uniqueKeys}">
-                        <td class="text-ellipsis" th:title="${ukey.name}" th:text="${ukey.name}">
-                            <a th:name="'key' + ${ukey.name}"></a>
-                        </td>
+                    <tr th:each="ukey : ${tableElement.keys}">
+                        <td th:id="'key$' + ${ukey.name}" class="text-ellipsis" th:title="${ukey.name}" th:text="${ukey.name}"></td>
                         <td>
                             <span th:each="e : ${ukey.keyColumns}" th:text="${e.name}" class="element-in-set"></span>
                         </td>

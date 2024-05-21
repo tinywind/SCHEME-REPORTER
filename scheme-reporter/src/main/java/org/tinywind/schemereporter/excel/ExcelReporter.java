@@ -122,12 +122,12 @@ public class ExcelReporter implements Reportable {
                     create(row, INDEX_PKEY, column.getPrimaryKey() != null ? "O" : "", style);
 
                     final StringBuilder ukeyString = new StringBuilder();
-                    table.getUniqueKeys().stream().filter(e -> e.getKeyColumns().contains(column)).forEach(e -> ukeyString.append(e.getName()).append("\n"));
+                    table.getKeys().stream().filter(e -> e.getKeyColumns().contains(column)).forEach(e -> ukeyString.append(e.getName()).append("\n"));
                     create(row, INDEX_UKEY, ukeyString.toString().trim(), style);
                     create(row, INDEX_DEFAULTED, column.getType().isDefaulted() ? "O" : "", style);
 
                     final StringBuilder referredString = new StringBuilder();
-                    column.getUniqueKeys().forEach(ukey -> ukey.getForeignKeys().forEach(fkey -> {
+                    column.getKeys().forEach(ukey -> ukey.getForeignKeys().forEach(fkey -> {
                         referredString.append("[").append(fkey.getKeyTable().getName()).append("] ");
                         fkey.getKeyColumns().forEach(keyColumn -> referredString.append(keyColumn.getName()).append(" "));
                         referredString.append("\n");

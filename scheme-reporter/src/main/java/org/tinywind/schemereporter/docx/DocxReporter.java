@@ -92,7 +92,7 @@ public class DocxReporter implements Reportable {
             documentPart.addStyledParagraphOfText("Heading2", e.getName());
             if (!StringUtils.isEmpty(e.getComment())) documentPart.addStyledParagraphOfText("Normal", e.getComment());
             for (String literal : e.getLiterals())
-                documentPart.addObject(createNumberedParagraph(numberingId, 0, literal));
+                documentPart.addObject(numberedText(numberingId, 0, literal));
         }
 
         documentPart.addParagraphOfText("");
@@ -101,13 +101,16 @@ public class DocxReporter implements Reportable {
 
         for (TableDefinition e : tables) {
             documentPart.addParagraphOfText("");
-            documentPart.addStyledParagraphOfText("Heading2", e.getName());
+            final P tableTitleP = documentPart.addStyledParagraphOfText("Heading2", e.getName());
+            attachBookmark("table$" + e.getName(), tableTitleP);
             documentPart.addStyledParagraphOfText("Normal", e.getComment());
             documentPart.addObject(newImage(wordMLPackage, pngBytesFromSvg(relationSvg.get(e.getName()))));
             documentPart.addObject(tableDefinition(wordMLPackage, e));
             documentPart.addParagraphOfText("");
-            documentPart.addObject(tableUniqueKey(wordMLPackage, e));
-            documentPart.addParagraphOfText("");
+            if (!e.getKeys().isEmpty()) {
+                documentPart.addObject(tableUniqueKey(wordMLPackage, e));
+                documentPart.addParagraphOfText("");
+            }
             documentPart.addObject(tableColumnComments(wordMLPackage, e));
         }
 
@@ -141,15 +144,16 @@ public class DocxReporter implements Reportable {
         final int writableWidthTwips = wordMLPackage.getDocumentModel().getSections().get(0).getPageDimensions().getWritableWidthTwips();
         final Tbl table = TblFactory.createTable(e.getColumns().size() + 1, COLUMN_SIZE, writableWidthTwips / COLUMN_SIZE);
         clearTableContents(table);
+        setTableWidthFull(table);
 
         final Tr header = (Tr) table.getContent().get(0);
-        ((Tc) header.getContent().get(INDEX_COLUMN_COLUMN_NAME)).getContent().add(createTextParagraph("COLUMN", JcEnumeration.CENTER));
-        ((Tc) header.getContent().get(INDEX_COLUMN_TYPE)).getContent().add(createTextParagraph("TYPE", JcEnumeration.CENTER));
-        ((Tc) header.getContent().get(INDEX_COLUMN_NULLABLE)).getContent().add(createTextParagraph("NULLABLE", JcEnumeration.CENTER));
-        ((Tc) header.getContent().get(INDEX_COLUMN_PKEY)).getContent().add(createTextParagraph("PKEY", JcEnumeration.CENTER));
-        ((Tc) header.getContent().get(INDEX_COLUMN_DEFAULTED)).getContent().add(createTextParagraph("DEFAULTED", JcEnumeration.CENTER));
-        ((Tc) header.getContent().get(INDEX_COLUMN_REFERRED)).getContent().add(createTextParagraph("REFERRED", JcEnumeration.CENTER));
-        ((Tc) header.getContent().get(INDEX_COLUMN_REFER)).getContent().add(createTextParagraph("REFER", JcEnumeration.CENTER));
+        tableHeaderCell(header, INDEX_COLUMN_COLUMN_NAME, 15).getContent().add(tableText("COLUMN", JcEnumeration.CENTER));
+        tableHeaderCell(header, INDEX_COLUMN_TYPE, 15).getContent().add(tableText("TYPE", JcEnumeration.CENTER));
+        tableHeaderCell(header, INDEX_COLUMN_NULLABLE, 10).getContent().add(tableText("NULLABLE", JcEnumeration.CENTER));
+        tableHeaderCell(header, INDEX_COLUMN_PKEY, 10).getContent().add(tableText("PKEY", JcEnumeration.CENTER));
+        tableHeaderCell(header, INDEX_COLUMN_DEFAULTED, 10).getContent().add(tableText("DEFAULTED", JcEnumeration.CENTER));
+        tableHeaderCell(header, INDEX_COLUMN_REFERRED, 20).getContent().add(tableText("REFERRED", JcEnumeration.CENTER));
+        tableHeaderCell(header, INDEX_COLUMN_REFER, 20).getContent().add(tableText("REFER", JcEnumeration.CENTER));
 
         for (int i = 0; i < e.getColumns().size(); i++) {
             final ColumnDefinition column = e.getColumns().get(i);
@@ -157,24 +161,24 @@ public class DocxReporter implements Reportable {
             final String typeName = type.equalsIgnoreCase("USER-DEFINED") ? column.getType().getUserType() : type + (column.getType().getLength() != 0 ? "(" + column.getType().getLength() + ")" : "");
             final Tr tr = (Tr) table.getContent().get(i + 1);
 
-            ((Tc) tr.getContent().get(INDEX_COLUMN_COLUMN_NAME)).getContent().add(createTextParagraph(column.getName(), JcEnumeration.CENTER));
-            ((Tc) tr.getContent().get(INDEX_COLUMN_TYPE)).getContent().add(createTextParagraph(typeName, JcEnumeration.CENTER));
-            ((Tc) tr.getContent().get(INDEX_COLUMN_NULLABLE)).getContent().add(createTextParagraph(column.getType().isNullable() ? "●" : "", JcEnumeration.CENTER));
-            ((Tc) tr.getContent().get(INDEX_COLUMN_PKEY)).getContent().add(createTextParagraph(column.getPrimaryKey() != null ? "●" : "", JcEnumeration.CENTER));
-            ((Tc) tr.getContent().get(INDEX_COLUMN_DEFAULTED)).getContent().add(createTextParagraph(column.getType().isDefaulted() ? "●" : "", JcEnumeration.CENTER));
+            tableCell(tr, INDEX_COLUMN_COLUMN_NAME).getContent().add(tableText(column.getName(), JcEnumeration.CENTER));
+            tableCell(tr, INDEX_COLUMN_TYPE).getContent().add(tableText(typeName, JcEnumeration.CENTER));
+            tableCell(tr, INDEX_COLUMN_NULLABLE).getContent().add(tableText(column.getType().isNullable() ? "●" : "", JcEnumeration.CENTER));
+            tableCell(tr, INDEX_COLUMN_PKEY).getContent().add(tableText(column.getPrimaryKey() != null ? "●" : "", JcEnumeration.CENTER));
+            tableCell(tr, INDEX_COLUMN_DEFAULTED).getContent().add(tableText(column.getType().isDefaulted() ? "●" : "", JcEnumeration.CENTER));
 
-            if (column.getUniqueKeys().isEmpty() || column.getUniqueKeys().stream().allMatch(pkey -> pkey.getForeignKeys().isEmpty())) {
-                ((Tc) tr.getContent().get(INDEX_COLUMN_REFERRED)).getContent().add(createTextParagraph(""));
+            if (column.getKeys().isEmpty() || column.getKeys().stream().allMatch(pkey -> pkey.getForeignKeys().isEmpty())) {
+                tableCell(tr, INDEX_COLUMN_REFERRED).getContent().add(tableText(""));
             } else {
-                for (UniqueKeyDefinition key : column.getUniqueKeys()) {
-                    writeKeyDescriptions((Tc) tr.getContent().get(INDEX_COLUMN_REFERRED), key.getForeignKeys(), false);
+                for (UniqueKeyDefinition key : column.getKeys()) {
+                    writeKeyDescriptions(tableCell(tr, INDEX_COLUMN_REFERRED), key.getForeignKeys(), false);
                 }
             }
 
             if (column.getForeignKeys().isEmpty()) {
-                ((Tc) tr.getContent().get(INDEX_COLUMN_REFER)).getContent().add(createTextParagraph(""));
+                ((Tc) tr.getContent().get(INDEX_COLUMN_REFER)).getContent().add(tableText(""));
             } else {
-                writeKeyDescriptions((Tc) tr.getContent().get(INDEX_COLUMN_REFER), column.getForeignKeys(), true);
+                writeKeyDescriptions(tableCell(tr, INDEX_COLUMN_REFER), column.getForeignKeys(), true);
             }
         }
 
@@ -189,17 +193,18 @@ public class DocxReporter implements Reportable {
         final int writableWidthTwips = wordMLPackage.getDocumentModel().getSections().get(0).getPageDimensions().getWritableWidthTwips();
         final Tbl table = TblFactory.createTable(e.getColumns().size() + 1, COLUMN_SIZE, writableWidthTwips / COLUMN_SIZE);
         clearTableContents(table);
+        setTableWidthFull(table);
 
         final Tr header = (Tr) table.getContent().get(0);
-        ((Tc) header.getContent().get(INDEX_COLUMN_COLUMN_NAME)).getContent().add(createTextParagraph("COLUMN", JcEnumeration.CENTER));
-        ((Tc) header.getContent().get(INDEX_COLUMN_DESCRIPTION)).getContent().add(createTextParagraph("DESCRIPTION", JcEnumeration.CENTER));
+        tableHeaderCell(header, INDEX_COLUMN_COLUMN_NAME, 15).getContent().add(tableText("COLUMN", JcEnumeration.CENTER));
+        tableHeaderCell(header, INDEX_COLUMN_DESCRIPTION, 85).getContent().add(tableText("DESCRIPTION", JcEnumeration.CENTER));
 
         for (int i = 0; i < e.getColumns().size(); i++) {
             final ColumnDefinition column = e.getColumns().get(i);
             final Tr tr = (Tr) table.getContent().get(i + 1);
 
-            ((Tc) tr.getContent().get(INDEX_COLUMN_COLUMN_NAME)).getContent().add(createTextParagraph(column.getName(), JcEnumeration.CENTER));
-            ((Tc) tr.getContent().get(INDEX_COLUMN_DESCRIPTION)).getContent().add(createTextParagraph(column.getComment() != null ? column.getComment() : ""));
+            tableCell(tr, INDEX_COLUMN_COLUMN_NAME).getContent().add(tableText(column.getName(), JcEnumeration.CENTER));
+            tableCell(tr, INDEX_COLUMN_DESCRIPTION).getContent().add(tableText(column.getComment() != null ? column.getComment() : ""));
         }
 
         return table;
@@ -212,26 +217,28 @@ public class DocxReporter implements Reportable {
         final int COLUMN_SIZE = INDEX_COLUMN_DESCRIPTION + 1;
 
         final int writableWidthTwips = wordMLPackage.getDocumentModel().getSections().get(0).getPageDimensions().getWritableWidthTwips();
-        final Tbl table = TblFactory.createTable(e.getUniqueKeys().size() + 1, COLUMN_SIZE, writableWidthTwips / COLUMN_SIZE);
+        final Tbl table = TblFactory.createTable(e.getKeys().size() + 1, COLUMN_SIZE, writableWidthTwips / COLUMN_SIZE);
         clearTableContents(table);
+        setTableWidthFull(table);
 
         final Tr header = (Tr) table.getContent().get(0);
-        ((Tc) header.getContent().get(INDEX_COLUMN_KEY_NAME)).getContent().add(createTextParagraph("UNIQUE KEY", JcEnumeration.CENTER));
-        ((Tc) header.getContent().get(INDEX_COLUMN_COLUMNS)).getContent().add(createTextParagraph("COLUMNS", JcEnumeration.CENTER));
-        ((Tc) header.getContent().get(INDEX_COLUMN_DESCRIPTION)).getContent().add(createTextParagraph("DESCRIPTION", JcEnumeration.CENTER));
 
-        for (int i = 0; i < e.getUniqueKeys().size(); i++) {
-            final UniqueKeyDefinition ukey = e.getUniqueKeys().get(i);
+        tableHeaderCell(header, INDEX_COLUMN_KEY_NAME, 15).getContent().add(tableText("UNIQUE KEY", JcEnumeration.CENTER));
+        tableHeaderCell(header, INDEX_COLUMN_COLUMNS, 15).getContent().add(tableText("COLUMNS", JcEnumeration.CENTER));
+        tableHeaderCell(header, INDEX_COLUMN_DESCRIPTION, 70).getContent().add(tableText("DESCRIPTION", JcEnumeration.CENTER));
+
+        for (int i = 0; i < e.getKeys().size(); i++) {
+            final UniqueKeyDefinition ukey = e.getKeys().get(i);
             final Tr tr = (Tr) table.getContent().get(i + 1);
             final StringBuilder columnString = new StringBuilder();
             for (ColumnDefinition column : ukey.getKeyColumns()) columnString.append(column.getName()).append(" ");
 
-            final P keyNameParagraph = createTextParagraph(ukey.getName(), JcEnumeration.CENTER);
-            attachBookmark(ukey.getName(), keyNameParagraph);
+            final P keyNameParagraph = tableText(ukey.getName(), JcEnumeration.CENTER);
+            attachBookmark("key$" + ukey.getName(), keyNameParagraph);
 
-            ((Tc) tr.getContent().get(INDEX_COLUMN_KEY_NAME)).getContent().add(keyNameParagraph);
-            ((Tc) tr.getContent().get(INDEX_COLUMN_COLUMNS)).getContent().add(createTextParagraph(columnString.toString(), JcEnumeration.CENTER));
-            ((Tc) tr.getContent().get(INDEX_COLUMN_DESCRIPTION)).getContent().add(createTextParagraph(ukey.getComment() != null ? ukey.getComment() : ""));
+            tableCell(tr, INDEX_COLUMN_KEY_NAME).getContent().add(keyNameParagraph);
+            tableCell(tr, INDEX_COLUMN_COLUMNS).getContent().add(tableText(columnString.toString(), JcEnumeration.CENTER));
+            tableCell(tr, INDEX_COLUMN_DESCRIPTION).getContent().add(tableText(ukey.getComment() != null ? ukey.getComment() : ""));
         }
 
         return table;
@@ -245,20 +252,43 @@ public class DocxReporter implements Reportable {
             else for (ColumnDefinition column : fkey.getKeyColumns()) text.append(" ").append(column.getName());
 
             if (referenced) {
-                final P p = createTextParagraph("");
-                p.getContent().add(MainDocumentPart.hyperlinkToBookmark(fkey.getReferencedKey().getName(), text.toString()));
+                final P p = tableText("");
+                final P.Hyperlink hyperlink = MainDocumentPart.hyperlinkToBookmark(fkey.getReferencedKey().getName(), text.toString());
+                setTextSize(hyperlink);
+                p.getContent().add(hyperlink);
                 tc.getContent().add(p);
             } else {
-                tc.getContent().add(createTextParagraph(text.toString()));
+                tc.getContent().add(tableText(text.toString()));
             }
         }
     }
 
-    private P createTextParagraph(String paragraphText) {
-        return createTextParagraph(paragraphText, JcEnumeration.LEFT);
+    private Tc tableHeaderCell(Tr row, int index, int widthPercents) {
+        final Tc tc = (Tc) row.getContent().get(index);
+        final TcPr tcPr = factory.createTcPr();
+        final CTShd ctShd = factory.createCTShd();
+        // background: light gray
+        ctShd.setFill("F2F2F2");
+        tcPr.setShd(ctShd);
+        tc.setTcPr(tcPr);
+        setTableCellWidthPercent(tc, widthPercents);
+        return tc;
     }
 
-    private P createTextParagraph(String paragraphText, JcEnumeration justification) {
+    private Tc tableCell(Tr row, int index) {
+        final Tc tc = (Tc) row.getContent().get(index);
+        final TcPr tcPr = factory.createTcPr();
+        final CTShd ctShd = factory.createCTShd();
+        tcPr.setShd(ctShd);
+        tc.setTcPr(tcPr);
+        return tc;
+    }
+
+    private P tableText(String paragraphText) {
+        return tableText(paragraphText, JcEnumeration.LEFT);
+    }
+
+    private P tableText(String paragraphText, JcEnumeration justification) {
         final P p = factory.createP();
 
         final Text t = factory.createText();
@@ -274,11 +304,59 @@ public class DocxReporter implements Reportable {
         jc.setVal(justification);
         paragraphProperties.setJc(jc);
         p.setPPr(paragraphProperties);
+        setTextSize(p);
 
         return p;
     }
 
-    private P createNumberedParagraph(long numId, long ilvl, String paragraphText) {
+    private void setTableCellWidthPercent(Tc tc, int percent) {
+        final TcPr tcPr = tc.getTcPr();
+        final TblWidth tblWidth = factory.createTblWidth();
+        tblWidth.setW(BigInteger.valueOf(percent));
+        tblWidth.setType("pct");
+        tcPr.setTcW(tblWidth);
+    }
+
+    private void setTableWidthFull(Tbl table) {
+        final TblPr tblPr = table.getTblPr();
+        final TblWidth tblWidth = factory.createTblWidth();
+        tblWidth.setW(BigInteger.valueOf(5000));
+        tblWidth.setType("pct");
+        tblPr.setTblW(tblWidth);
+    }
+
+    private void setTextSize(P p) {
+        final RPr rpr = factory.createRPr();
+        final HpsMeasure sz = factory.createHpsMeasure();
+        sz.setVal(BigInteger.valueOf(15));
+        rpr.setSz(sz);
+
+        for (Object o : p.getContent()) {
+            if (o instanceof R) {
+                ((R) o).setRPr(rpr);
+            }
+        }
+    }
+
+    private void setTextSize(P.Hyperlink p) {
+        for (Object o : p.getContent()) {
+            if (o instanceof R run) {
+                RPr rPr = run.getRPr();
+                if (rPr == null) {
+                    rPr = factory.createRPr();
+                    run.setRPr(rPr);
+                }
+                HpsMeasure sz = rPr.getSz();
+                if (sz == null) {
+                    sz = factory.createHpsMeasure();
+                    rPr.setSz(sz);
+                }
+                sz.setVal(BigInteger.valueOf(15));
+            }
+        }
+    }
+
+    private P numberedText(long numId, long ilvl, String paragraphText) {
         final P p = factory.createP();
 
         final Text t = factory.createText();

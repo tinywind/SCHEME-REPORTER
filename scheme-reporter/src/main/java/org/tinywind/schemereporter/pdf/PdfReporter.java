@@ -127,7 +127,7 @@ public class PdfReporter implements Reportable {
             final TableDefinition e = tables.get(i);
             final Div div = tableTitle(e).add(new Paragraph().add(createImage(relationSvg.get(e.getName()), svgScaleRate, MAX_WIDTH, MAX_HEIGHT)).setTextAlignment(TextAlignment.CENTER)).add(tableDefinition(e));
 
-            if (!e.getUniqueKeys().isEmpty()) div.add(tableUniqueKey(e));
+            if (!e.getKeys().isEmpty()) div.add(tableUniqueKey(e));
 
             if (e.getColumns().stream().anyMatch(c -> !StringUtils.isEmpty(c.getComment())))
                 div.add(tableColumnComments(e));
@@ -217,7 +217,14 @@ public class PdfReporter implements Reportable {
     }
 
     private BlockElement<?> tableDefinition(TableDefinition e) {
-        final Table table = new Table(new float[]{20, 20, 6, 6, 8, 20, 20}).setWidth(UnitValue.createPercentValue(100)).addHeaderCell(headerCell("column")).addHeaderCell(headerCell("type")).addHeaderCell(headerCell("nullable").setTextAlignment(TextAlignment.CENTER)).addHeaderCell(headerCell("pkey").setTextAlignment(TextAlignment.CENTER)).addHeaderCell(headerCell("defaulted").setTextAlignment(TextAlignment.CENTER)).addHeaderCell(headerCell("referred")).addHeaderCell(headerCell("refer"));
+        final Table table = new Table(7, false).setWidth(UnitValue.createPercentValue(100))
+                .addHeaderCell(headerCell("column").setWidth(UnitValue.createPercentValue(15)))
+                .addHeaderCell(headerCell("type").setWidth(UnitValue.createPercentValue(15)))
+                .addHeaderCell(headerCell("nullable").setWidth(UnitValue.createPercentValue(10)).setTextAlignment(TextAlignment.CENTER))
+                .addHeaderCell(headerCell("pkey").setWidth(UnitValue.createPercentValue(10)).setTextAlignment(TextAlignment.CENTER))
+                .addHeaderCell(headerCell("defaulted").setWidth(UnitValue.createPercentValue(10)).setTextAlignment(TextAlignment.CENTER))
+                .addHeaderCell(headerCell("referred").setWidth(UnitValue.createPercentValue(20)))
+                .addHeaderCell(headerCell("refer").setWidth(UnitValue.createPercentValue(20)));
 
         for (int i = 0; i < e.getColumns().size(); i++) {
             final boolean presentBottom = i + 1 < e.getColumns().size();
@@ -236,7 +243,7 @@ public class PdfReporter implements Reportable {
             table.addCell(cell(column.getType().isDefaulted() ? "●" : "", presentBottom).setTextAlignment(TextAlignment.CENTER));
 
             final Div divUniqueKey = new Div();
-            for (UniqueKeyDefinition key : column.getUniqueKeys())
+            for (UniqueKeyDefinition key : column.getKeys())
                 putKeyDescriptions(divUniqueKey, key.getForeignKeys(), false);
             table.addCell(cell(divUniqueKey, presentBottom));
 
@@ -249,11 +256,14 @@ public class PdfReporter implements Reportable {
     }
 
     private BlockElement<?> tableUniqueKey(TableDefinition e) {
-        final Table table = new Table(new float[]{20, 30, 50}).setWidth(UnitValue.createPercentValue(100)).addHeaderCell(headerCell("unique key")).addHeaderCell(headerCell("columns")).addHeaderCell(headerCell("description"));
+        final Table table = new Table(3, false).setWidth(UnitValue.createPercentValue(100))
+                .addHeaderCell(headerCell("unique key").setWidth(UnitValue.createPercentValue(15)))
+                .addHeaderCell(headerCell("columns").setWidth(UnitValue.createPercentValue(15)))
+                .addHeaderCell(headerCell("description").setWidth(UnitValue.createPercentValue(70)));
 
-        for (int i = 0; i < e.getUniqueKeys().size(); i++) {
-            final boolean presentBottom = i + 1 < e.getUniqueKeys().size();
-            final UniqueKeyDefinition ukey = e.getUniqueKeys().get(i);
+        for (int i = 0; i < e.getKeys().size(); i++) {
+            final boolean presentBottom = i + 1 < e.getKeys().size();
+            final UniqueKeyDefinition ukey = e.getKeys().get(i);
             table.addCell(cell(ukey.getName(), presentBottom).setDestination("key$" + ukey.getName()));
             StringBuilder text = new StringBuilder();
             for (ColumnDefinition column : ukey.getKeyColumns()) text.append(column.getName()).append(" ");
@@ -265,7 +275,9 @@ public class PdfReporter implements Reportable {
     }
 
     private BlockElement<?> tableColumnComments(TableDefinition e) {
-        final Table table = new Table(new float[]{20, 80}).setWidth(UnitValue.createPercentValue(100)).addHeaderCell(headerCell("column")).addHeaderCell(headerCell("description"));
+        final Table table = new Table(2, false).setWidth(UnitValue.createPercentValue(100))
+                .addHeaderCell(headerCell("column").setWidth(UnitValue.createPercentValue(15)))
+                .addHeaderCell(headerCell("description").setWidth(UnitValue.createPercentValue(85)));
 
         final java.util.List<ColumnDefinition> list = e.getColumns().stream().filter(column -> column.getComment() != null).toList();
         for (int i = 0; i < list.size(); i++) {
