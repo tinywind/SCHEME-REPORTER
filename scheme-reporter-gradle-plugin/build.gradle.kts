@@ -30,7 +30,7 @@ gradlePlugin {
             implementationClass = "org.tinywind.SchemeReporterPlugin"
             displayName = "Scheme Reporter plugin"
             description = "Gradle plugin to generate scheme report"
-            tags.set(listOf("database", "scheme", "report", "plugin"))
+            tags.set(listOf("database", "scheme", "report"))
         }
     }
 }
