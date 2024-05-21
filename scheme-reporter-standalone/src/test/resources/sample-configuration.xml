@@ -14,10 +14,12 @@
     </database>
 
     <generator>
-        <!--<reporterClass>org.tinywind.schemereporter.pdf.PdfReporter</reporterClass>-->
-        <!--<reporterClass>org.tinywind.schemereporter.html.HtmlReporter</reporterClass>-->
-        <!--<reporterClass>org.tinywind.schemereporter.excel.ExcelReporter</reporterClass>-->
-        <!--<template>scheme-reporter/src/main/resources/asset/default.jsp</template>-->
+        <!--<reporterClass>pdf</reporterClass>-->
+        <!--<reporterClass>html</reporterClass>-->
+        <!--<reporterClass>excel</reporterClass>-->
+        <!--<reporterClass>docx</reporterClass>-->
+        <!--<reporterClass>custom reporter class implemented Reportable class</reporterClass>-->
+        <!--<template>scheme-reporter/src/main/resources/asset/default.html</template>-->
         <outputDirectory>doc</outputDirectory>
     </generator>
 </configuration>

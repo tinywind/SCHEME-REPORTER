@@ -33,7 +33,6 @@ import org.tinywind.schemereporter.util.FileUtils;
 
 import java.io.File;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.tinywind.schemereporter.util.TableImage.relationSvg;
 import static org.tinywind.schemereporter.util.TableImage.totalRelationSvg;

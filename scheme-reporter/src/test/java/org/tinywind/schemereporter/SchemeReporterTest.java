@@ -45,10 +45,10 @@ public class SchemeReporterTest {
             "    </generator>" +
             "</configuration>";
 
-    private final String pdfConfig = header + "<reporterClass>org.tinywind.schemereporter.pdf.PdfReporter</reporterClass>" + tail;
-    private final String htmlConfig = header + "<reporterClass>org.tinywind.schemereporter.html.HtmlReporter</reporterClass>" + tail;
-    private final String excelConfig = header + "<reporterClass>org.tinywind.schemereporter.excel.ExcelReporter</reporterClass>" + tail;
-    private final String docxConfig = header + "<reporterClass>org.tinywind.schemereporter.docx.DocxReporter</reporterClass>" + tail;
+    private final String pdfConfig = header + "<reporterClass>pdf</reporterClass>" + tail;
+    private final String htmlConfig = header + "<reporterClass>html</reporterClass>" + tail;
+    private final String excelConfig = header + "<reporterClass>excel</reporterClass>" + tail;
+    private final String docxConfig = header + "<reporterClass>docx</reporterClass>" + tail;
 
     @Test
     public void test() throws SQLException, IOException {
@@ -67,10 +67,10 @@ public class SchemeReporterTest {
             log.error("Error", e);
             assert false;
         } finally {
-//            new File("doc/PUBLIC.html").deleteOnExit();
-//            new File("doc/PUBLIC.pdf").deleteOnExit();
-//            new File("doc/PUBLIC.xlsx").deleteOnExit();
-//            new File("doc/PUBLIC.docx").deleteOnExit();
+            new File("doc/PUBLIC.html").deleteOnExit();
+            new File("doc/PUBLIC.pdf").deleteOnExit();
+            new File("doc/PUBLIC.xlsx").deleteOnExit();
+            new File("doc/PUBLIC.docx").deleteOnExit();
         }
     }
 }

@@ -27,10 +27,12 @@ create reporter from remote database
                         <inputSchema>PUBLIC</inputSchema>
                     </database>                
                     <generator>
-                        <!--<reporterClass>org.tinywind.schemereporter.pdf.PdfReporter</reporterClass>-->
-                        <!--<reporterClass>org.tinywind.schemereporter.excel.ExcelReporter</reporterClass>-->
-                        <!--<reporterClass>org.tinywind.schemereporter.docx.DocxReporter</reporterClass>-->
-                        <!--<template>scheme-reporter/src/main/resources/asset/default.jsp</template>-->
+                        <!--<reporterClass>html</reporterClass>-->
+                        <!--<reporterClass>pdf</reporterClass>-->
+                        <!--<reporterClass>excel</reporterClass>-->
+                        <!--<reporterClass>docx</reporterClass>-->
+                        <!--<reporterClass>custom reporter class implemented Reportable class</reporterClass>-->
+                        <!--<template>scheme-reporter/src/main/resources/asset/default.html</template>-->
                         <outputDirectory>doc</outputDirectory>
                     </generator>
                 </configuration>

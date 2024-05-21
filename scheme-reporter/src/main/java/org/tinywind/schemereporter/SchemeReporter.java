@@ -24,6 +24,7 @@ import org.jooq.meta.SchemaDefinition;
 import org.jooq.meta.jaxb.CatalogMappingType;
 import org.jooq.meta.jaxb.SchemaMappingType;
 import org.jooq.tools.JooqLogger;
+import org.jooq.tools.StringUtils;
 import org.jooq.tools.jdbc.JDBCUtils;
 import org.tinywind.schemereporter.jaxb.Configuration;
 import org.tinywind.schemereporter.jaxb.Database;
@@ -180,6 +181,17 @@ public class SchemeReporter {
         log.info("----------------------------------------------------------");
 
         final Generator generator = configuration.getGenerator();
+        if (generator.getReporterClass().equalsIgnoreCase("html"))
+            generator.setReporterClass("org.tinywind.schemereporter.html.HtmlReporter");
+        else if (generator.getReporterClass().equalsIgnoreCase("pdf"))
+            generator.setReporterClass("org.tinywind.schemereporter.pdf.PdfReporter");
+        else if (generator.getReporterClass().equalsIgnoreCase("excel"))
+            generator.setReporterClass("org.tinywind.schemereporter.excel.ExcelReporter");
+        else if (generator.getReporterClass().equalsIgnoreCase("docx"))
+            generator.setReporterClass("org.tinywind.schemereporter.docx.DocxReporter");
+
+        log.info("Reporter class", generator.getReporterClass());
+
         @SuppressWarnings("unchecked") final Class<? extends Reportable> reporterClass = (Class<? extends Reportable>) Class.forName(generator.getReporterClass());
         final Reportable reporter = reporterClass.getConstructor().newInstance();
         reporter.setDatabase(database);
