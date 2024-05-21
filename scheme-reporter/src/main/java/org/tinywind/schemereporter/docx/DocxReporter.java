@@ -31,6 +31,7 @@ import org.jooq.tools.JooqLogger;
 import org.jooq.tools.StringUtils;
 import org.tinywind.schemereporter.Reportable;
 import org.tinywind.schemereporter.jaxb.Generator;
+import org.tinywind.schemereporter.util.FileUtils;
 import org.tinywind.schemereporter.util.TableImage;
 
 import java.io.File;
@@ -61,21 +62,9 @@ public class DocxReporter implements Reportable {
 
     @Override
     public final void generate(SchemaDefinition schema) throws Exception {
-
         final SchemaVersionProvider schemaVersionProvider = schema.getDatabase().getSchemaVersionProvider();
         final String version = schemaVersionProvider != null ? schemaVersionProvider.version(schema) : null;
-        StringBuilder revise = new StringBuilder();
-        File file;
-        while ((file = new File(generator.getOutputDirectory(), schema.getName() + (!StringUtils.isEmpty(version) ? "-" + version : "") + revise + ".docx")).exists()) {
-            revise.append("_");
-        }
-
-        log.info("output file: " + file);
-        final File path = file.getParentFile();
-        if (path != null) {
-            if (path.mkdirs()) log.info("created path: " + path);
-            else log.error("failed to create path: " + path);
-        }
+        final File file = FileUtils.getOutputFile(generator.getOutputDirectory(), "docx", schema.getName(), version);
 
         final WordprocessingMLPackage wordMLPackage = WordprocessingMLPackage.createPackage();
         final MainDocumentPart documentPart = wordMLPackage.getMainDocumentPart();

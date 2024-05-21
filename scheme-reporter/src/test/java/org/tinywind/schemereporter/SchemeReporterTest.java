@@ -67,10 +67,10 @@ public class SchemeReporterTest {
             log.error("Error", e);
             assert false;
         } finally {
-            new File("doc/PUBLIC.html").deleteOnExit();
-            new File("doc/PUBLIC.pdf").deleteOnExit();
-            new File("doc/PUBLIC.xlsx").deleteOnExit();
-            new File("doc/PUBLIC.docx").deleteOnExit();
+//            new File("doc/PUBLIC.html").deleteOnExit();
+//            new File("doc/PUBLIC.pdf").deleteOnExit();
+//            new File("doc/PUBLIC.xlsx").deleteOnExit();
+//            new File("doc/PUBLIC.docx").deleteOnExit();
         }
     }
 }

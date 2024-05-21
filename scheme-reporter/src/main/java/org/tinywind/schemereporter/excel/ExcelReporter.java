@@ -18,11 +18,11 @@ package org.tinywind.schemereporter.excel;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.jooq.tools.JooqLogger;
-import org.jooq.tools.StringUtils;
 import org.jooq.meta.*;
+import org.jooq.tools.JooqLogger;
 import org.tinywind.schemereporter.Reportable;
 import org.tinywind.schemereporter.jaxb.Generator;
+import org.tinywind.schemereporter.util.FileUtils;
 import org.tinywind.schemereporter.util.TableImage;
 
 import java.io.File;
@@ -61,18 +61,7 @@ public class ExcelReporter implements Reportable {
     public final void generate(SchemaDefinition schema) throws Exception {
         final SchemaVersionProvider schemaVersionProvider = schema.getDatabase().getSchemaVersionProvider();
         final String version = schemaVersionProvider != null ? schemaVersionProvider.version(schema) : null;
-        StringBuilder revise = new StringBuilder();
-        File file;
-        while ((file = new File(generator.getOutputDirectory(), schema.getName() + (!StringUtils.isEmpty(version) ? "-" + version : "") + revise + ".xlsx")).exists()) {
-            revise.append("_");
-        }
-
-        log.info("output file: " + file);
-        final File path = file.getParentFile();
-        if (path != null) {
-            if (path.mkdirs()) log.info("created path: " + path);
-            else log.error("failed to create path: " + path);
-        }
+        final File file = FileUtils.getOutputFile(generator.getOutputDirectory(), "xlsx", schema.getName(), version);
 
         final List<EnumDefinition> enums = database.getEnums(schema);
         final List<TableDefinition> tables = database.getTables(schema);
@@ -128,9 +117,7 @@ public class ExcelReporter implements Reportable {
                     final Row row = sheet.createRow(iRow++);
 
                     create(row, INDEX_COLUMN, column.getName(), style);
-                    create(row, INDEX_TYPE, column.getType().getType().equals("USER-DEFINED")
-                            ? column.getType().getUserType()
-                            : column.getType().getType() + (column.getType().getLength() > 0 ? " (" + column.getType().getLength() + ")" : ""), style);
+                    create(row, INDEX_TYPE, column.getType().getType().equals("USER-DEFINED") ? column.getType().getUserType() : column.getType().getType() + (column.getType().getLength() > 0 ? " (" + column.getType().getLength() + ")" : ""), style);
                     create(row, INDEX_NULLABLE, column.getType().isNullable() ? "O" : "", style);
                     create(row, INDEX_PKEY, column.getPrimaryKey() != null ? "O" : "", style);
 
@@ -160,8 +147,7 @@ public class ExcelReporter implements Reportable {
 
             for (int i = 0; i <= MAX_INDEX_COLUMN; i++) {
                 sheet.autoSizeColumn(i);
-                if (MAX_COLUMN_WIDTH < sheet.getColumnWidth(i))
-                    sheet.setColumnWidth(i, MAX_COLUMN_WIDTH);
+                if (MAX_COLUMN_WIDTH < sheet.getColumnWidth(i)) sheet.setColumnWidth(i, MAX_COLUMN_WIDTH);
             }
 
             workbook.write(new FileOutputStream(file));

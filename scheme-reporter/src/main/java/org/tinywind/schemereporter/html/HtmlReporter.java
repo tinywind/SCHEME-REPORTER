@@ -16,45 +16,33 @@
  */
 package org.tinywind.schemereporter.html;
 
-import org.apache.jasper.JspC;
-import org.apache.jasper.compiler.JspUtil;
-import org.apache.jasper.runtime.HttpJspBase;
-import org.apache.tools.ant.util.FileUtils;
 import org.jooq.meta.Database;
 import org.jooq.meta.SchemaDefinition;
 import org.jooq.meta.SchemaVersionProvider;
 import org.jooq.meta.TableDefinition;
 import org.jooq.tools.JooqLogger;
 import org.jooq.tools.StringUtils;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
+import org.thymeleaf.templateresolver.FileTemplateResolver;
+import org.thymeleaf.templateresolver.ITemplateResolver;
 import org.tinywind.schemereporter.Reportable;
 import org.tinywind.schemereporter.jaxb.Generator;
+import org.tinywind.schemereporter.util.FileUtils;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.util.Arrays;
+import java.io.File;
 import java.util.List;
-import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static org.tinywind.schemereporter.util.TableImage.relationSvg;
 import static org.tinywind.schemereporter.util.TableImage.totalRelationSvg;
 
-public class HtmlReporter implements Reportable, Closeable {
+public class HtmlReporter implements Reportable {
     private static final JooqLogger log = JooqLogger.getLogger(HtmlReporter.class);
-
-    static {
-        System.setProperty("org.apache.el.parser.SKIP_IDENTIFIER_CHECK", "true");
-    }
 
     private Database database;
     private Generator generator;
-    private HttpJspBase jsp;
-
-    private File tempDir;
 
     @Override
     public void setDatabase(Database database) {
@@ -64,175 +52,59 @@ public class HtmlReporter implements Reportable, Closeable {
     @Override
     public void setGenerator(Generator generator) {
         this.generator = generator;
-        try {
-            final String template = generator.getTemplate();
-            tempDir = Files.createTempDirectory("scheme-reporter").toFile();
-
-            if (!valid(tempDir)) {
-                log.warn("invalid System.getProperty(\"java.io.tmpdir\"): " + System.getProperty("java.io.tmpdir"));
-                tempDir = new File("scheme-reporter" + System.nanoTime()).getAbsoluteFile();
-
-                if (tempDir.mkdirs()) log.info("created tempDir: " + tempDir);
-                else log.error("failed to create tempDir: " + tempDir);
-            }
-
-            final File tempFile = Files.createTempFile(tempDir.toPath(), "template", ".jsp").toFile();
-
-            final FileWriter writer = new FileWriter(tempFile);
-            final char[] buffer = new char[1024 * 1024];
-            final InputStreamReader reader = StringUtils.isEmpty(template)
-                    ? new InputStreamReader(Objects.requireNonNull(getClass().getClassLoader().getResourceAsStream("asset/default.jsp")))
-                    : new FileReader(template);
-            int read;
-            while ((read = reader.read(buffer)) >= 0) writer.write(buffer, 0, read);
-            writer.flush();
-
-            try {
-                reader.close();
-            } catch (Exception ignored) {
-            }
-            try {
-                writer.close();
-            } catch (Exception ignored) {
-            }
-
-            jsp = getCompiledJspBase(tempFile, tempDir);
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
-        }
     }
 
     @Override
     public void generate(SchemaDefinition schema) throws Exception {
         final SchemaVersionProvider schemaVersionProvider = schema.getDatabase().getSchemaVersionProvider();
         final String version = schemaVersionProvider != null ? schemaVersionProvider.version(schema) : null;
-        StringBuilder revise = new StringBuilder();
-        File file;
-        while ((file = new File(generator.getOutputDirectory(), schema.getName() + (!StringUtils.isEmpty(version) ? "-" + version : "") + revise + ".html")).exists()) {
-            revise.append("_");
-        }
 
-        log.info("output file: " + file);
-        final File path = file.getParentFile();
-        if (path != null) {
-            if (path.mkdirs()) log.info("created path: " + path);
-            else log.error("failed to create path: " + path);
-        }
+        final TemplateData templateData = getTemplateData(generator.getTemplate());
+        final TemplateEngine templateEngine = new TemplateEngine();
+        templateEngine.setTemplateResolver(templateData.templateResolver);
 
-        final HttpServletRequest request = new SimpleServletRequest();
-        final HttpServletResponse response = new SimpleServletResponse(file, "utf-8");
-
+        final Context context = new Context();
         final List<TableDefinition> tables = database.getTables(schema);
-        request.setAttribute("totalRelationSvg", totalRelationSvg(tables));
-        request.setAttribute("relationSvg", relationSvg(tables));
-        request.setAttribute("database", database);
-        request.setAttribute("enums", database.getEnums(schema));
-        request.setAttribute("sequences", database.getSequences(schema));
-        request.setAttribute("tables", tables);
+        context.setVariable("utils", new TemplateUtils());
+        context.setVariable("totalRelationSvg", totalRelationSvg(tables));
+        context.setVariable("relationSvg", relationSvg(tables));
+        context.setVariable("database", database);
+        context.setVariable("enums", database.getEnums(schema));
+        context.setVariable("sequences", database.getSequences(schema));
+        context.setVariable("tables", tables);
 
-        jsp.init(new SimpleServletConfig());
-        jsp.service(request, response);
-        response.getWriter().flush();
-        response.getWriter().close();
+        final String content = templateEngine.process(templateData.templateName, context);
+        final File file = FileUtils.getOutputFile(generator.getOutputDirectory(), "html", schema.getName(), version);
+        log.info("output file: " + file);
+        org.apache.commons.io.FileUtils.write(file, content, "UTF-8");
     }
 
-    /**
-     * If file path is valid, return true.
-     * <br/>
-     * found invalid path from <s>System.getProperty("java.io.tmpdir")</s>
-     * <dl>
-     * <dt>C:\Users\ADMINI~1\AppData\Local\Temp\</dt>
-     * <dd>is invalid</dd>
-     * <dt>C:\Users\Administrator\AppData\Local\Temp\</dt>
-     * <dd>is valid</dd>
-     * </dl>
-     */
-    private boolean valid(File file) {
-        String[] paths = file.getAbsolutePath().replaceAll("\\\\", "/").split("/");
-
-        if (paths.length == 0) return true;
-
-        File root = new File(File.separator + paths[0] + File.separator);
-
-        return valid(root, Arrays.copyOfRange(paths, 1, paths.length));
-    }
-
-    private boolean valid(File dir, String[] paths) {
-        if (paths.length == 0) return true;
-
-        File[] listFiles = dir.listFiles();
-
-        if (listFiles == null) return false;
-
-        for (File file : listFiles)
-            if (file.getName().equalsIgnoreCase(paths[0]))
-                return valid(file, Arrays.copyOfRange(paths, 1, paths.length));
-
-        return false;
-    }
-
-    private HttpJspBase getCompiledJspBase(File templateFile, File tempDir) throws IOException, NoSuchMethodException, ClassNotFoundException, IllegalAccessException, InvocationTargetException, InstantiationException {
-        final String JSP_PACKAGE_NAME = "_compiled";
-
-        final File compiledJspClassFile = jspCompile(templateFile.getPath(), JSP_PACKAGE_NAME, tempDir.getAbsolutePath());
-        if (!compiledJspClassFile.exists()) {
-            throw new RuntimeException("failed: JspCompile");
+    private TemplateData getTemplateData(String templateFilePath) {
+        if (StringUtils.isEmpty(templateFilePath)) {
+            final ClassLoaderTemplateResolver templateResolver = new ClassLoaderTemplateResolver();
+            templateResolver.setPrefix("/asset/");
+            templateResolver.setSuffix(".html");
+            templateResolver.setTemplateMode("HTML5");
+            templateResolver.setCharacterEncoding("UTF-8");
+            return new TemplateData(templateResolver, "default");
         }
 
-        final URLClassLoader jspClassLoader = new URLClassLoader(new URL[]{tempDir.toURI().toURL()}, this.getClass().getClassLoader());
-        final String jspClassName = (StringUtils.isEmpty(JSP_PACKAGE_NAME) ? "" : JSP_PACKAGE_NAME + ".") + getServletClassName(templateFile.getName());
-        final Class<?> klass = Class.forName(jspClassName, true, jspClassLoader);
-        return (HttpJspBase) klass.getConstructor().newInstance();
+        final File templateFile = new File(templateFilePath);
+        final FileTemplateResolver templateResolver = new FileTemplateResolver();
+        templateResolver.setPrefix(templateFile.getParent() + "/");
+        templateResolver.setSuffix(templateFile.getName().lastIndexOf(".") == -1 ? "" : templateFile.getName().substring(templateFile.getName().lastIndexOf(".")));
+        templateResolver.setTemplateMode("HTML5");
+        templateResolver.setCharacterEncoding("UTF-8");
+        return new TemplateData(templateResolver, templateFile.getName().lastIndexOf(".") == -1 ? templateFile.getName() : templateFile.getName().substring(0, templateFile.getName().lastIndexOf(".")));
     }
 
-    private File jspCompile(String filePath, String packageName, String outputDir) {
-        filePath = filePath.replaceAll("[\\\\]", "/");
-        outputDir = outputDir.replaceAll("[\\\\]", "/");
+    static class TemplateData {
+        ITemplateResolver templateResolver;
+        String templateName;
 
-        final JspC jspc = new JspC();
-        final String URI_ROOT = outputDir;
-        jspc.setUriroot(URI_ROOT);
-        jspc.setOutputDir(outputDir);
-        jspc.setCompile(true);
-
-        log.info("Compiling " + filePath);
-        jspc.setJspFiles(filePath);
-        jspc.setPackage(packageName);
-
-        jspc.execute();
-
-        final File uriRoot = FileUtils.getFileUtils().resolveFile(jspc.getProject() == null ? null : jspc.getProject().getBaseDir(), URI_ROOT);
-        File jspFile = new File(filePath);
-        if (!jspFile.isAbsolute()) jspFile = new File(uriRoot, filePath);
-
-        final String jspAbsolutePath = jspFile.getAbsolutePath();
-        final String uriRootAbsolutePath = uriRoot.getAbsolutePath();
-        if (jspAbsolutePath.startsWith(uriRootAbsolutePath))
-            filePath = jspAbsolutePath.substring(uriRootAbsolutePath.length());
-        if (filePath.startsWith("." + File.separatorChar)) filePath = filePath.substring(2);
-
-        return new File(outputDir + "/" + packageName.replaceAll("[.]", "/"), getServletClassName(filePath).replaceAll("[.]", "/") + ".class");
-    }
-
-    private String getServletClassName(String jspUri) {
-        jspUri = jspUri.replaceAll("\\\\", "/");
-        StringBuilder result = new StringBuilder();
-
-        for (int index = jspUri.indexOf("/"), last = 0; index >= 0; index = jspUri.indexOf("/", index + 1)) {
-            result.append(index == 0 ? "" : JspUtil.makeJavaIdentifier(jspUri.substring(last, index)) + ".");
-            last = index + 1;
+        TemplateData(ITemplateResolver templateResolver, String templateName) {
+            this.templateResolver = templateResolver;
+            this.templateName = templateName;
         }
-
-        String fileName = jspUri;
-        int index = jspUri.lastIndexOf("/");
-        if (index >= 0) fileName = jspUri.substring(index + 1);
-        int iSep = fileName.lastIndexOf(47) + 1;
-
-        return result + JspUtil.makeJavaIdentifier(fileName.substring(iSep));
-    }
-
-    @Override
-    public void close() throws IOException {
-        org.apache.commons.io.FileUtils.deleteDirectory(tempDir);
     }
 }
