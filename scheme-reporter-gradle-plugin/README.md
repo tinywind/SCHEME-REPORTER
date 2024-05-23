@@ -77,6 +77,20 @@ To generate the schema report, run the following Gradle task:
 
 This will generate the report in the specified `outputDirectory`.
 
+### Additional Configuration
+
+If the plugin does not process correctly, you may need to add `mavenCentral()` to the `pluginManagement` section of the `repositories` in your Gradle settings.
+
+```kotlin
+pluginManagement {
+    repositories {
+        mavenCentral() // note: add this repository
+        gradlePluginPortal()
+        maven { url = uri("https://jitpack.io") }
+    }
+}
+```
+
 ### Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request on GitHub.
