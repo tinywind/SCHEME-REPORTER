@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.tinywind</groupId>
         <artifactId>scheme-reporter-parent</artifactId>
-        <version>1.0.0</version>
+        <version>1.0.1</version>
     </parent>
 
     <artifactId>scheme-reporter</artifactId>
@@ -22,7 +22,7 @@
     </licenses>
 
     <properties>
-        <jooq.version>3.19.8</jooq.version>
+        <jooq.version>3.19.30</jooq.version>
         <jetty.version>9.4.54.v20240208</jetty.version>
         <itextpdf.version>7.2.6</itextpdf.version>
         <docx4j.version>11.4.11</docx4j.version>
