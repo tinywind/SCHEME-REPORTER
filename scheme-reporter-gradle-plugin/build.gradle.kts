@@ -6,7 +6,7 @@ plugins {
 }
 
 group = "org.tinywind"
-version = "1.0.1"
+version = "1.0.2"
 
 repositories {
     mavenLocal()
@@ -14,12 +14,12 @@ repositories {
 }
 
 dependencies {
-    implementation("org.tinywind:scheme-reporter:1.0.1")
+    implementation("org.tinywind:scheme-reporter:1.0.2")
     implementation("guru.nidi:graphviz-java-all-j2v8:0.18.1")
     implementation(gradleApi())
     testImplementation("junit:junit:4.13.2")
     testImplementation(gradleTestKit())
-    testImplementation("org.tinywind:scheme-reporter-sample-database:1.0.1")
+    testImplementation("org.tinywind:scheme-reporter-sample-database:1.0.2")
     testImplementation("com.h2database:h2:2.2.224")
 }
 

@@ -13,7 +13,7 @@ Add the plugin to your `build.gradle.kts`:
 
 ```kotlin
 plugins {
-    id("org.tinywind.scheme-reporter") version "1.0.1"
+    id("org.tinywind.scheme-reporter") version "1.0.2"
 }
 
 repositories {
