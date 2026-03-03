@@ -2,6 +2,8 @@ package org.tinywind
 
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.FileCollection
+import org.gradle.api.tasks.Classpath
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
 import org.tinywind.schemereporter.SchemeReporter
 import org.tinywind.schemereporter.jaxb.Configuration
@@ -10,8 +12,10 @@ import java.sql.Driver
 import javax.inject.Inject
 
 abstract class SchemeReporterTask @Inject constructor(
-    private var extension: SchemeReporterExtension,
-    private var runtimeClasspath: FileCollection,
+    @get:Internal
+    private val extension: SchemeReporterExtension,
+    @get:Classpath
+    private val runtimeClasspath: FileCollection,
 ) : DefaultTask() {
 
     @Suppress("UNCHECKED_CAST")
