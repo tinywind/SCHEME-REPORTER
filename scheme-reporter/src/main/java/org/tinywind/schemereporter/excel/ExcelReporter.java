@@ -17,13 +17,12 @@
 package org.tinywind.schemereporter.excel;
 
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFCellStyle;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.jooq.meta.*;
 import org.jooq.tools.JooqLogger;
-import org.jooq.tools.StringUtils;
-import org.jooq.util.*;
 import org.tinywind.schemereporter.Reportable;
 import org.tinywind.schemereporter.jaxb.Generator;
+import org.tinywind.schemereporter.util.FileUtils;
 import org.tinywind.schemereporter.util.TableImage;
 
 import java.io.File;
@@ -62,16 +61,7 @@ public class ExcelReporter implements Reportable {
     public final void generate(SchemaDefinition schema) throws Exception {
         final SchemaVersionProvider schemaVersionProvider = schema.getDatabase().getSchemaVersionProvider();
         final String version = schemaVersionProvider != null ? schemaVersionProvider.version(schema) : null;
-        StringBuilder revise = new StringBuilder();
-        File file;
-        while ((file = new File(generator.getOutputDirectory(), schema.getName() + (!StringUtils.isEmpty(version) ? "-" + version : "") + revise + ".xlsx")).exists()) {
-            revise.append("_");
-        }
-
-        log.info("output file: " + file);
-        final File path = file.getParentFile();
-        if (path != null)
-            path.mkdirs();
+        final File file = FileUtils.getOutputFile(generator.getOutputDirectory(), "xlsx", schema.getName(), version);
 
         final List<EnumDefinition> enums = database.getEnums(schema);
         final List<TableDefinition> tables = database.getTables(schema);
@@ -84,20 +74,20 @@ public class ExcelReporter implements Reportable {
             final CellStyle leadStyle = workbook.createCellStyle();
             final CellStyle headerStyle = workbook.createCellStyle();
 
-            style.setBorderTop(XSSFCellStyle.BORDER_THIN);
-            style.setBorderRight(XSSFCellStyle.BORDER_THIN);
-            style.setBorderBottom(XSSFCellStyle.BORDER_THIN);
-            style.setBorderLeft(XSSFCellStyle.BORDER_THIN);
+            style.setBorderTop(BorderStyle.THIN);
+            style.setBorderRight(BorderStyle.THIN);
+            style.setBorderBottom(BorderStyle.THIN);
+            style.setBorderLeft(BorderStyle.THIN);
             style.setTopBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
             style.setRightBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
             style.setBottomBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
             style.setLeftBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
             style.setWrapText(true);
 
-            headerStyle.setBorderTop(XSSFCellStyle.BORDER_THIN);
-            headerStyle.setBorderRight(XSSFCellStyle.BORDER_THIN);
-            headerStyle.setBorderBottom(XSSFCellStyle.BORDER_THIN);
-            headerStyle.setBorderLeft(XSSFCellStyle.BORDER_THIN);
+            headerStyle.setBorderTop(BorderStyle.THIN);
+            headerStyle.setBorderRight(BorderStyle.THIN);
+            headerStyle.setBorderBottom(BorderStyle.THIN);
+            headerStyle.setBorderLeft(BorderStyle.THIN);
             headerStyle.setTopBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
             headerStyle.setRightBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
             headerStyle.setBottomBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
@@ -105,7 +95,7 @@ public class ExcelReporter implements Reportable {
             headerStyle.setWrapText(true);
             headerStyle.setAlignment(HorizontalAlignment.CENTER);
             headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
-            headerStyle.setFillPattern(CellStyle.SOLID_FOREGROUND);
+            headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
             final Font font = workbook.createFont();
             font.setFontHeightInPoints((short) 12);
@@ -127,19 +117,17 @@ public class ExcelReporter implements Reportable {
                     final Row row = sheet.createRow(iRow++);
 
                     create(row, INDEX_COLUMN, column.getName(), style);
-                    create(row, INDEX_TYPE, column.getType().getType().equals("USER-DEFINED")
-                            ? column.getType().getUserType()
-                            : column.getType().getType() + (column.getType().getLength() > 0 ? " (" + column.getType().getLength() + ")" : ""), style);
-                    create(row, INDEX_NULLABLE, column.isNullable() ? "O" : "", style);
+                    create(row, INDEX_TYPE, column.getType().getType().equals("USER-DEFINED") ? column.getType().getUserType() : column.getType().getType() + (column.getType().getLength() > 0 ? " (" + column.getType().getLength() + ")" : ""), style);
+                    create(row, INDEX_NULLABLE, column.getType().isNullable() ? "O" : "", style);
                     create(row, INDEX_PKEY, column.getPrimaryKey() != null ? "O" : "", style);
 
                     final StringBuilder ukeyString = new StringBuilder();
-                    table.getUniqueKeys().stream().filter(e -> e.getKeyColumns().contains(column)).forEach(e -> ukeyString.append(e.getName()).append("\n"));
+                    table.getKeys().stream().filter(e -> e.getKeyColumns().contains(column)).forEach(e -> ukeyString.append(e.getName()).append("\n"));
                     create(row, INDEX_UKEY, ukeyString.toString().trim(), style);
                     create(row, INDEX_DEFAULTED, column.getType().isDefaulted() ? "O" : "", style);
 
                     final StringBuilder referredString = new StringBuilder();
-                    column.getUniqueKeys().forEach(ukey -> ukey.getForeignKeys().forEach(fkey -> {
+                    column.getKeys().forEach(ukey -> ukey.getForeignKeys().forEach(fkey -> {
                         referredString.append("[").append(fkey.getKeyTable().getName()).append("] ");
                         fkey.getKeyColumns().forEach(keyColumn -> referredString.append(keyColumn.getName()).append(" "));
                         referredString.append("\n");
@@ -159,8 +147,7 @@ public class ExcelReporter implements Reportable {
 
             for (int i = 0; i <= MAX_INDEX_COLUMN; i++) {
                 sheet.autoSizeColumn(i);
-                if (MAX_COLUMN_WIDTH < sheet.getColumnWidth(i))
-                    sheet.setColumnWidth(i, MAX_COLUMN_WIDTH);
+                if (MAX_COLUMN_WIDTH < sheet.getColumnWidth(i)) sheet.setColumnWidth(i, MAX_COLUMN_WIDTH);
             }
 
             workbook.write(new FileOutputStream(file));

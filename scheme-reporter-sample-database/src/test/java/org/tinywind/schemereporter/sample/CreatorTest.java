@@ -32,7 +32,7 @@ public class CreatorTest {
     public void test() throws SQLException, IOException {
         Creator.create();
 
-        try (final Connection connection = Creator.connection()) {
+        try (final Connection connection = Creator.getConnection()) {
             try (final Statement statement = connection.createStatement()) {
                 statement.execute("INSERT INTO public_file (original_name, name, size) VALUES ('original_name', 'name', 0)");
             }

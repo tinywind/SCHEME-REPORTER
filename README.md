@@ -1,65 +1,138 @@
 # SCHEME-REPORTER
-create reporter from remote database
 
-# Configure Maven
-```
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.tinywind</groupId>
-                <artifactId>scheme-reporter-maven</artifactId>
-                <version>0.5.0</version>
-                <executions>
-                    <execution>
-                        <phase>none</phase>
-                    </execution>
-                </executions>
-                <configuration>
-                    <jdbc>
-                        <driverClass>org.h2.Driver</driverClass>
-                    </jdbc>
-                    <database>
-                        <url>jdbc:h2:tcp://localhost:9092/mem:test;DB_CLOSE_DELAY=-1</url>
-                        <user>sa</user>
-                        <password></password>
-                        <includes>.*</includes>
-                        <excludes>schema_version|jettysessions|jettysessionids</excludes>
-                        <inputSchema>PUBLIC</inputSchema>
-                    </database>                
-                    <generator>
-                        <!--<reporterClass>org.tinywind.schemereporter.pdf.PdfReporter</reporterClass>-->
-                        <!--<reporterClass>org.tinywind.schemereporter.excel.ExcelReporter</reporterClass>-->
-                        <!--<reporterClass>org.tinywind.schemereporter.docx.DocxReporter</reporterClass>-->
-                        <!--<template>scheme-reporter/src/main/resources/asset/default.jsp</template>-->
-                        <outputDirectory>doc</outputDirectory>
-                    </generator>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.h2database</groupId>
-                        <artifactId>h2</artifactId>
-                        <version>1.4.196</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
-        </plugins>
-    </build>
+SCHEME-REPORTER is a tool designed to generate reports from remote databases in various formats such as HTML, PDF, Excel, and DOCX. It supports a flexible configuration and can be easily integrated into Maven or Gradle build systems.
+
+## Features
+
+- Supports multiple report formats: HTML, PDF, Excel, and DOCX
+- Custom reporter class support
+- Uses Thymeleaf as the HTML template engine
+- Easily integrated with Maven and Gradle
+
+## Compatibility
+
+| Component | Supported Versions |
+|---|---|
+| **JDK** | 17+ |
+| **Gradle** | 8.x, 9.x |
+| **Maven** | 3.x |
+
+## Configure Gradle
+
+Add the plugin and your JDBC driver to `build.gradle.kts`:
+
+```kotlin
+plugins {
+    id("org.tinywind.scheme-reporter") version "1.0.1"
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    schemaReporter("org.postgresql:postgresql:42.7.10")
+}
+
+schemaReporter {
+    jdbc {
+        driverClass = "org.postgresql.Driver"
+    }
+    database {
+        url = "jdbc:postgresql://localhost:5432/mydb"
+        user = "postgres"
+        password = "postgres"
+        includes = ".*"
+        excludes = "flyway_schema_history"
+        inputSchema = "public"
+    }
+    generator {
+        // Available formats: pdf, docx, excel, html
+        // Or use a fully qualified class name implementing the Reportable interface
+        reporterClass = "pdf"
+        outputDirectory = layout.buildDirectory.dir("reports/schema").get().asFile.absolutePath
+    }
+}
 ```
 
-# Run
+### Running the Gradle Task
+
+```sh
+./gradlew generateSchemeReport
+```
+
+For more details on using the Scheme Reporter Gradle Plugin, refer to the [Scheme Reporter Gradle Plugin README](https://github.com/tinywind/SCHEME-REPORTER/blob/master/scheme-reporter-gradle-plugin/README.md).
+
+## Configure Maven
+
+Add the following configuration to your `pom.xml` file:
+
+```xml
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.tinywind</groupId>
+            <artifactId>scheme-reporter-maven</artifactId>
+            <version>1.0.1</version>
+            <executions>
+                <execution>
+                    <phase>none</phase>
+                </execution>
+            </executions>
+            <configuration>
+                <jdbc>
+                    <driverClass>org.postgresql.Driver</driverClass>
+                </jdbc>
+                <database>
+                    <url>jdbc:postgresql://localhost:5432/mydb</url>
+                    <user>postgres</user>
+                    <password>postgres</password>
+                    <includes>.*</includes>
+                    <excludes>flyway_schema_history</excludes>
+                    <inputSchema>public</inputSchema>
+                </database>
+                <generator>
+                    <!-- Available formats: html, pdf, excel, docx -->
+                    <!-- Or use a fully qualified class name implementing the Reportable interface -->
+                    <reporterClass>pdf</reporterClass>
+                    <!-- Thymeleaf template file for HTML reporter class. If not set, the default template will be used. -->
+                    <template>./asset/template.html</template>
+                    <outputDirectory>doc</outputDirectory>
+                </generator>
+            </configuration>
+            <dependencies>
+                <dependency>
+                    <groupId>org.postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <version>42.7.10</version>
+                </dependency>
+            </dependencies>
+        </plugin>
+    </plugins>
+</build>
+```
+
+### Running the Maven Plugin
+
+```sh
 mvn scheme-reporter-maven:generate
+```
 
-# Output(sample)
-https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.html
+## Output Samples
 
-https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.pdf
+Here are some sample outputs generated by SCHEME-REPORTER:
 
-https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.xlsx
+- [HTML Report](https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.html)
+- [PDF Report](https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.pdf)
+- [Excel Report](https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.xlsx)
+- [DOCX Report](https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.docx)
 
-https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.docx
+## License
 
+Licensed under the Apache License, Version 2.0. If you are using this tool with commercial databases, please refer to the [jOOQ licensing page](http://www.jooq.org/legal/licensing) for more information.
 
-# LICENSE
-**Licensed under the Apache License, Version 2.0**
+## Contribution
 
-If use on commercial databases, refer `http://www.jooq.org/legal/licensing`
+Contributions are welcome! If you find any issues or have suggestions, please open an issue or submit a pull request on GitHub.
+
+---
