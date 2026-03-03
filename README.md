@@ -7,12 +7,65 @@ SCHEME-REPORTER is a tool designed to generate reports from remote databases in 
 - Supports multiple report formats: HTML, PDF, Excel, and DOCX
 - Custom reporter class support
 - Uses Thymeleaf as the HTML template engine
-- Updated to support JDK 17
 - Easily integrated with Maven and Gradle
+
+## Compatibility
+
+| Component | Supported Versions |
+|---|---|
+| **JDK** | 17+ |
+| **Gradle** | 8.x, 9.x |
+| **Maven** | 3.x |
+
+## Configure Gradle
+
+Add the plugin and your JDBC driver to `build.gradle.kts`:
+
+```kotlin
+plugins {
+    id("org.tinywind.scheme-reporter") version "1.0.1"
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    schemaReporter("org.postgresql:postgresql:42.7.10")
+}
+
+schemaReporter {
+    jdbc {
+        driverClass = "org.postgresql.Driver"
+    }
+    database {
+        url = "jdbc:postgresql://localhost:5432/mydb"
+        user = "postgres"
+        password = "postgres"
+        includes = ".*"
+        excludes = "flyway_schema_history"
+        inputSchema = "public"
+    }
+    generator {
+        // Available formats: pdf, docx, excel, html
+        // Or use a fully qualified class name implementing the Reportable interface
+        reporterClass = "pdf"
+        outputDirectory = layout.buildDirectory.dir("reports/schema").get().asFile.absolutePath
+    }
+}
+```
+
+### Running the Gradle Task
+
+```sh
+./gradlew generateSchemeReport
+```
+
+For more details on using the Scheme Reporter Gradle Plugin, refer to the [Scheme Reporter Gradle Plugin README](https://github.com/tinywind/SCHEME-REPORTER/blob/master/scheme-reporter-gradle-plugin/README.md).
 
 ## Configure Maven
 
-To use SCHEME-REPORTER with Maven, add the following configuration to your `pom.xml` file:
+Add the following configuration to your `pom.xml` file:
 
 ```xml
 <build>
@@ -20,7 +73,7 @@ To use SCHEME-REPORTER with Maven, add the following configuration to your `pom.
         <plugin>
             <groupId>org.tinywind</groupId>
             <artifactId>scheme-reporter-maven</artifactId>
-            <version>1.0.0</version>
+            <version>1.0.1</version>
             <executions>
                 <execution>
                     <phase>none</phase>
@@ -28,31 +81,30 @@ To use SCHEME-REPORTER with Maven, add the following configuration to your `pom.
             </executions>
             <configuration>
                 <jdbc>
-                    <driverClass>org.h2.Driver</driverClass>
+                    <driverClass>org.postgresql.Driver</driverClass>
                 </jdbc>
                 <database>
-                    <url>jdbc:h2:mem:test;DB_CLOSE_DELAY=-1</url>
-                    <user>sa</user>
-                    <password></password>
+                    <url>jdbc:postgresql://localhost:5432/mydb</url>
+                    <user>postgres</user>
+                    <password>postgres</password>
                     <includes>.*</includes>
-                    <excludes>schema_version|jettysessions|jettysessionids</excludes>
-                    <inputSchema>PUBLIC</inputSchema>
+                    <excludes>flyway_schema_history</excludes>
+                    <inputSchema>public</inputSchema>
                 </database>
                 <generator>
                     <!-- Available formats: html, pdf, excel, docx -->
-                    <!-- Or use a custom reporter class implementing the Reportable interface -->
+                    <!-- Or use a fully qualified class name implementing the Reportable interface -->
                     <reporterClass>pdf</reporterClass>
                     <!-- Thymeleaf template file for HTML reporter class. If not set, the default template will be used. -->
-                    <!-- Refer to: https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/scheme-reporter/src/main/resources/asset/default.html -->
                     <template>./asset/template.html</template>
                     <outputDirectory>doc</outputDirectory>
                 </generator>
             </configuration>
             <dependencies>
                 <dependency>
-                    <groupId>com.h2database</groupId>
-                    <artifactId>h2</artifactId>
-                    <version>2.2.224</version>
+                    <groupId>org.postgresql</groupId>
+                    <artifactId>postgresql</artifactId>
+                    <version>42.7.10</version>
                 </dependency>
             </dependencies>
         </plugin>
@@ -62,69 +114,8 @@ To use SCHEME-REPORTER with Maven, add the following configuration to your `pom.
 
 ### Running the Maven Plugin
 
-To generate a report using Maven, run the following command:
-
 ```sh
 mvn scheme-reporter-maven:generate
-```
-
-## Configure Gradle
-
-To use SCHEME-REPORTER with Gradle, add the following configuration to your `build.gradle.kts` file:
-
-```kotlin
-plugins {
-    id("org.tinywind.scheme-reporter") version "1.0.0"
-}
-
-dependencies {
-    schemaReporter("com.mysql:mysql-connector-j:8.4.0")
-}
-
-schemaReporter {
-    jdbc {
-        driverClass = "com.mysql.cj.jdbc.Driver"
-    }
-    database {
-        url = "jdbc:mysql://127.0.0.1:3306/database"
-        user = "user"
-        password = "password"
-        inputSchema = "database"
-    }
-    generator {
-        // Available formats: pdf, docx, excel, html
-        // Or use a custom reporter class implementing the Reportable interface
-        reporterClass = "pdf"
-        // Thymeleaf template file for HTML reporter class. If not set, the default template will be used.
-        // Refer to: https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/scheme-reporter/src/main/resources/asset/default.html
-        template = "./asset/template.html"
-        outputDirectory = "/doc"
-    }
-}
-```
-
-### Running the Gradle Task
-
-To generate a report using Gradle, run the following command:
-
-```sh
-./gradlew generateSchemeReport
-```
-
-For more details on using the Scheme Reporter Gradle Plugin, refer to the [Scheme Reporter Gradle Plugin README](https://github.com/tinywind/SCHEME-REPORTER/blob/master/scheme-reporter-gradle-plugin/README.md).
-
-### Additional Configuration in Gradle
-
-If the plugin does not process correctly, you may need to add `mavenCentral()` to the `pluginManagement` section of the `repositories` in your Gradle settings.
-
-```kotlin
-pluginManagement {
-    repositories {
-        mavenCentral() // note: add this repository
-        gradlePluginPortal()
-        maven { url = uri("https://jitpack.io") }
-    }
-}
 ```
 
 ## Output Samples

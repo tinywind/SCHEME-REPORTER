@@ -1,21 +1,19 @@
 # Scheme Reporter Gradle Plugin
 
-The Scheme Reporter Gradle Plugin allows you to generate database schema reports in various formats such as PDF, DOCX, Excel, and HTML. You can also use custom reporter classes to implement your own report formats.
+The Scheme Reporter Gradle Plugin generates database schema reports in various formats such as PDF, DOCX, Excel, and HTML.
 
-## Getting Started
+## Prerequisites
 
-### Prerequisites
+- **JDK**: 17 or later
+- **Gradle**: 8.x or 9.x
 
-- Gradle 8.0 or later
-- Java 17 or later
+## Installation
 
-### Installation
-
-1. Add the plugin to your `build.gradle.kts` file.
+Add the plugin to your `build.gradle.kts`:
 
 ```kotlin
 plugins {
-    id("org.tinywind.scheme-reporter") version "1.0.0"
+    id("org.tinywind.scheme-reporter") version "1.0.1"
 }
 
 repositories {
@@ -23,7 +21,51 @@ repositories {
 }
 ```
 
-2. Add the necessary dependencies and configure the `schemaReporter` extension in your `build.gradle.kts`.
+## Configuration
+
+Add your JDBC driver and configure the plugin:
+
+```kotlin
+dependencies {
+    schemaReporter("org.postgresql:postgresql:42.7.10")
+}
+
+schemaReporter {
+    jdbc {
+        driverClass = "org.postgresql.Driver"
+    }
+    database {
+        url = "jdbc:postgresql://localhost:5432/mydb"
+        user = "postgres"
+        password = "postgres"
+        includes = ".*"
+        excludes = "flyway_schema_history"
+        inputSchema = "public"
+    }
+    generator {
+        reporterClass = "pdf"
+        outputDirectory = layout.buildDirectory.dir("reports/schema").get().asFile.absolutePath
+    }
+}
+```
+
+### Configuration Reference
+
+- **jdbc**
+    - `driverClass` - Fully qualified name of the JDBC driver class
+- **database**
+    - `url` - JDBC URL of the database
+    - `user` - Database username
+    - `password` - Database password
+    - `includes` - Regex pattern for tables to include (e.g. `.*`)
+    - `excludes` - Regex pattern for tables to exclude (e.g. `flyway_schema_history`)
+    - `inputSchema` - Target schema name
+- **generator**
+    - `reporterClass` - Report format: `pdf`, `docx`, `excel`, `html`, or a fully qualified class name implementing the `Reportable` interface
+    - `template` - (Optional) Thymeleaf template file path for the HTML reporter. Uses the default template if not set
+    - `outputDirectory` - Directory where the generated reports will be saved
+
+### MySQL Example
 
 ```kotlin
 dependencies {
@@ -35,67 +77,26 @@ schemaReporter {
         driverClass = "com.mysql.cj.jdbc.Driver"
     }
     database {
-        url = "jdbc:mysql://127.0.0.1:3306/database"
-        user = "user"
+        url = "jdbc:mysql://localhost:3306/mydb"
+        user = "root"
         password = "password"
-        inputSchema = "database"
+        inputSchema = "mydb"
     }
     generator {
-        // Available formats: pdf, docx, excel, html
-        // Or use a custom reporter class implementing the Reportable interface
         reporterClass = "pdf"
-        // Thymeleaf template file for HTML reporter class. If not set, the default template will be used.
-        // Refer to: https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/scheme-reporter/src/main/resources/asset/default.html
-        template = "./asset/template.html"
-        outputDirectory = "/doc"
+        outputDirectory = layout.buildDirectory.dir("reports/schema").get().asFile.absolutePath
     }
 }
 ```
 
-### Configuration
-
-- `schemaReporter`: Main configuration block for the plugin.
-    - `jdbc`: Configuration for the JDBC connection.
-        - `driverClass`: Fully qualified name of the JDBC driver class.
-    - `database`: Configuration for the database connection.
-        - `url`: JDBC URL of the database.
-        - `user`: Database username.
-        - `password`: Database password.
-        - `inputSchema`: Input schema for the database.
-    - `generator`: Configuration for the report generator.
-        - `reporterClass`: Class name or format (pdf, docx, excel, html) of the reporter.
-        - `template`: Path to the Thymeleaf template file for the HTML reporter.
-        - `outputDirectory`: Directory where the generated reports will be saved.
-
-### Usage
-
-To generate the schema report, run the following Gradle task:
+## Usage
 
 ```sh
 ./gradlew generateSchemeReport
 ```
 
-This will generate the report in the specified `outputDirectory`.
+## License
 
-### Additional Configuration
-
-If the plugin does not process correctly, you may need to add `mavenCentral()` to the `pluginManagement` section of the `repositories` in your Gradle settings.
-
-```kotlin
-pluginManagement {
-    repositories {
-        mavenCentral() // note: add this repository
-        gradlePluginPortal()
-        maven { url = uri("https://jitpack.io") }
-    }
-}
-```
-
-### Contributing
-
-Contributions are welcome! Please open an issue or submit a pull request on GitHub.
-
-# LICENSE
 **Licensed under the Apache License, Version 2.0**
 
 If use on commercial databases, refer `http://www.jooq.org/legal/licensing`
