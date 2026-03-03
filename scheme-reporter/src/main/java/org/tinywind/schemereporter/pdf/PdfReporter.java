@@ -125,7 +125,9 @@ public class PdfReporter implements Reportable {
 
         for (int i = 0; i < tables.size(); i++) {
             final TableDefinition e = tables.get(i);
-            final Div div = tableTitle(e).add(new Paragraph().add(createImage(relationSvg.get(e.getName()), svgScaleRate, MAX_WIDTH, MAX_HEIGHT)).setTextAlignment(TextAlignment.CENTER)).add(tableDefinition(e));
+            final Div div = tableTitle(e);
+            div.add(new Paragraph().add(createImage(relationSvg.get(e.getName()), svgScaleRate, MAX_WIDTH, MAX_HEIGHT)).setTextAlignment(TextAlignment.CENTER));
+            div.add(tableDefinition(e));
 
             if (!e.getKeys().isEmpty()) div.add(tableUniqueKey(e));
 
