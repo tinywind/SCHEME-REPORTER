@@ -30,16 +30,22 @@ set "SCHEME_REPORTER_BUILD_FILTER=!org.jetbrains.kotlin.com.google.common.collec
 setlocal EnableDelayedExpansion
 for %%V in (JAVA_OPTS GRADLE_OPTS JDK_JAVA_OPTIONS _JAVA_OPTIONS) do (
     set "SCHEME_REPORTER_JVM_OPTIONS=!%%V!"
-    if not "!SCHEME_REPORTER_JVM_OPTIONS:-Djdk.serialFilter=!"=="!SCHEME_REPORTER_JVM_OPTIONS!" goto serialFilterConflict
+    if defined SCHEME_REPORTER_JVM_OPTIONS (
+        if not "!SCHEME_REPORTER_JVM_OPTIONS:-Djdk.serialFilter=!"=="!SCHEME_REPORTER_JVM_OPTIONS!" (
+            set "SCHEME_REPORTER_FILTER_SOURCE=%%V"
+            goto serialFilterConflict
+        )
+    )
 )
 if "!SCHEME_REPORTER_SERIAL_FILTER!"=="!SCHEME_REPORTER_BUILD_FILTER!" if "!JAVA_TOOL_OPTIONS!"=="!SCHEME_REPORTER_GUARDED_JAVA_TOOL_OPTIONS!" goto serialFilterReady
+set "SCHEME_REPORTER_FILTER_SOURCE=JAVA_TOOL_OPTIONS"
 if not "!JAVA_TOOL_OPTIONS:-Djdk.serialFilter=!"=="!JAVA_TOOL_OPTIONS!" goto serialFilterConflict
 set "JAVA_TOOL_OPTIONS=!JAVA_TOOL_OPTIONS! -Djdk.serialFilter=!SCHEME_REPORTER_BUILD_FILTER!"
 set "SCHEME_REPORTER_SERIAL_FILTER=!SCHEME_REPORTER_BUILD_FILTER!"
 set "SCHEME_REPORTER_GUARDED_JAVA_TOOL_OPTIONS=!JAVA_TOOL_OPTIONS!"
 goto serialFilterReady
 :serialFilterConflict
-1>&2 echo A preconfigured serialization filter requires explicit policy composition; refusing to replace it.
+1>&2 echo A preconfigured serialization filter in %SCHEME_REPORTER_FILTER_SOURCE% requires explicit policy composition; refusing to replace it.
 "%COMSPEC%" /c exit 1
 goto exitWithErrorLevel
 :serialFilterReady
