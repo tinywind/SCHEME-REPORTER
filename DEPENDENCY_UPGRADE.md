@@ -25,6 +25,8 @@ The wrapper scripts set `JAVA_TOOL_OPTIONS` before starting Java so a serializat
 
 Bytecode inspection found deserialization of compiler-produced metrics in `BtaCompilerRunnerKt.extractMetrics` and local KAPT cache files in `ClasspathSnapshot` and `ClasspathEntryData`. This project does not apply KAPT or Kotlin Native plugins. No network or report-input route into these Kotlin deserializers was demonstrated. Poisoned caches or a compromised compiler output remain relevant trust boundaries; this is a scoped mitigation, not a claim that the library is unreachable or patched.
 
+The wrappers reject preconfigured serialization filters or filter factories in `JAVA_TOOL_OPTIONS`, `JDK_JAVA_OPTIONS`, `_JAVA_OPTIONS`, `JAVA_OPTS`, and `GRADLE_OPTS` instead of weakening an operator policy. Other Java options are preserved, including quoted values. An unchanged guard owned by a parent wrapper is accepted for nested calls. Operator policies that require additional restrictions need explicit composition with the bootstrap policy before building.
+
 Developer builds must use the protected wrapper and retain the project settings. Bypassing the wrapper, dropping `JAVA_TOOL_OPTIONS`, reusing an older unprotected daemon, or using the Kotlin build plugin outside this project can remove that protection. Keep build caches private and do not restore caches from untrusted sources.
 
 ## Verification scope

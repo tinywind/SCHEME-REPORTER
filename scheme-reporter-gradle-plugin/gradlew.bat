@@ -26,7 +26,24 @@
 @rem Set local scope for the variables, and ensure extensions are enabled
 setlocal EnableExtensions DisableDelayedExpansion
 @rem Block the vulnerable Guava serializers shaded by the Kotlin build plugin.
-set "JAVA_TOOL_OPTIONS=%JAVA_TOOL_OPTIONS% -Djdk.serialFilter=!org.jetbrains.kotlin.com.google.common.collect.CompactHashMap;!org.jetbrains.kotlin.com.google.common.collect.CompactHashSet;!org.jetbrains.kotlin.com.google.common.collect.MapMakerInternalMap$*;*"
+set "SCHEME_REPORTER_BUILD_FILTER=!org.jetbrains.kotlin.com.google.common.collect.CompactHashMap;!org.jetbrains.kotlin.com.google.common.collect.CompactHashSet;!org.jetbrains.kotlin.com.google.common.collect.MapMakerInternalMap$*;*"
+setlocal EnableDelayedExpansion
+for %%V in (JAVA_OPTS GRADLE_OPTS JDK_JAVA_OPTIONS _JAVA_OPTIONS) do (
+    set "SCHEME_REPORTER_JVM_OPTIONS=!%%V!"
+    if not "!SCHEME_REPORTER_JVM_OPTIONS:-Djdk.serialFilter=!"=="!SCHEME_REPORTER_JVM_OPTIONS!" goto serialFilterConflict
+)
+if "!SCHEME_REPORTER_SERIAL_FILTER!"=="!SCHEME_REPORTER_BUILD_FILTER!" if "!JAVA_TOOL_OPTIONS!"=="!SCHEME_REPORTER_GUARDED_JAVA_TOOL_OPTIONS!" goto serialFilterReady
+if not "!JAVA_TOOL_OPTIONS:-Djdk.serialFilter=!"=="!JAVA_TOOL_OPTIONS!" goto serialFilterConflict
+set "JAVA_TOOL_OPTIONS=!JAVA_TOOL_OPTIONS! -Djdk.serialFilter=!SCHEME_REPORTER_BUILD_FILTER!"
+set "SCHEME_REPORTER_SERIAL_FILTER=!SCHEME_REPORTER_BUILD_FILTER!"
+set "SCHEME_REPORTER_GUARDED_JAVA_TOOL_OPTIONS=!JAVA_TOOL_OPTIONS!"
+goto serialFilterReady
+:serialFilterConflict
+1>&2 echo A preconfigured serialization filter requires explicit policy composition; refusing to replace it.
+"%COMSPEC%" /c exit 1
+goto exitWithErrorLevel
+:serialFilterReady
+setlocal DisableDelayedExpansion
 
 @rem Catch executions from older scripts and ensure they exit cleanly.
 @rem This can be removed once we can be reasonably confident that few people

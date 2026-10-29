@@ -19,6 +19,9 @@ jobs:
       - name: Install current Maven artifacts locally
         shell: cmd
         run: mvn -B -ntp -DskipTests -Dgpg.skip=true install
+      - name: Verify existing and inherited JVM policies
+        working-directory: scheme-reporter-gradle-plugin
+        run: python ../.github/scripts/check-wrapper-environment.py .
       - name: Verify the Windows bootstrap with delayed expansion enabled
         working-directory: scheme-reporter-gradle-plugin
         shell: pwsh

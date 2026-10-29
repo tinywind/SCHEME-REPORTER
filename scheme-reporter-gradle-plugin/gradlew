@@ -66,8 +66,27 @@
 
 # Block the vulnerable Guava serializers shaded by the Kotlin build plugin.
 scheme_build_filter='!org.jetbrains.kotlin.com.google.common.collect.CompactHashMap;!org.jetbrains.kotlin.com.google.common.collect.CompactHashSet;!org.jetbrains.kotlin.com.google.common.collect.MapMakerInternalMap$*;*'
-JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:+$JAVA_TOOL_OPTIONS }-Djdk.serialFilter=$scheme_build_filter"
-export JAVA_TOOL_OPTIONS
+scheme_filter_conflict() {
+    printf '%s\n' "A preconfigured serialization filter requires explicit policy composition; refusing to replace it." >&2
+    exit 1
+}
+for scheme_jvm_options in "${JAVA_OPTS-}" "${GRADLE_OPTS-}" "${JDK_JAVA_OPTIONS-}" "${_JAVA_OPTIONS-}"; do
+    case $scheme_jvm_options in
+      *-Djdk.serialFilter*) scheme_filter_conflict ;;
+    esac
+done
+if [ "${SCHEME_REPORTER_SERIAL_FILTER-}" = "$scheme_build_filter" ] &&
+   [ "${SCHEME_REPORTER_GUARDED_JAVA_TOOL_OPTIONS-}" = "${JAVA_TOOL_OPTIONS-}" ]; then
+    :
+else
+    case ${JAVA_TOOL_OPTIONS-} in
+      *-Djdk.serialFilter*) scheme_filter_conflict ;;
+    esac
+    JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:+$JAVA_TOOL_OPTIONS }-Djdk.serialFilter=$scheme_build_filter"
+    SCHEME_REPORTER_SERIAL_FILTER=$scheme_build_filter
+    SCHEME_REPORTER_GUARDED_JAVA_TOOL_OPTIONS=$JAVA_TOOL_OPTIONS
+    export JAVA_TOOL_OPTIONS SCHEME_REPORTER_SERIAL_FILTER SCHEME_REPORTER_GUARDED_JAVA_TOOL_OPTIONS
+fi
 
 # Attempt to set APP_HOME
 
