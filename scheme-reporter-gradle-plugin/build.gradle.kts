@@ -1,12 +1,18 @@
+import java.io.ObjectInputFilter
+
 plugins {
-    kotlin("jvm") version "2.1.0"
+    kotlin("jvm") version "2.4.21"
     `java-gradle-plugin`
     `maven-publish`
-    id("com.gradle.plugin-publish") version "2.0.0"
+    id("com.gradle.plugin-publish") version "2.2.1"
 }
 
 group = "org.tinywind"
 version = "1.0.2"
+
+kotlin {
+    jvmToolchain(17)
+}
 
 repositories {
     mavenLocal()
@@ -15,12 +21,20 @@ repositories {
 
 dependencies {
     implementation("org.tinywind:scheme-reporter:1.0.2")
-    implementation("guru.nidi:graphviz-java-all-j2v8:0.18.1")
     implementation(gradleApi())
     testImplementation("junit:junit:4.13.2")
     testImplementation(gradleTestKit())
     testImplementation("org.tinywind:scheme-reporter-sample-database:1.0.2")
-    testImplementation("com.h2database:h2:2.2.224")
+    testImplementation("com.h2database:h2:2.5.252")
+}
+
+tasks.test {
+    check(ObjectInputFilter.Config.getSerialFilter() != null) { "Use the protected Gradle wrapper for this build" }
+    System.getProperty("jdk.serialFilter")?.let { systemProperty("jdk.serialFilter", it) }
+    val kotlinPlugin = buildscript.configurations.getByName("classpath").resolvedConfiguration.resolvedArtifacts.single {
+        it.moduleVersion.id.group == "org.jetbrains.kotlin" && it.name == "kotlin-gradle-plugin"
+    }
+    systemProperty("schemeReporterKotlinPluginJar", kotlinPlugin.file.absolutePath)
 }
 
 gradlePlugin {

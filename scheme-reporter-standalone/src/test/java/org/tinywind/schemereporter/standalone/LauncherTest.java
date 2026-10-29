@@ -31,7 +31,7 @@ public class LauncherTest {
         Creator.create();
 
         try {
-            Launcher.main(new String[]{"src/test/resources/sample-configuration.xml", "src/test/resources/h2-1.4.196.jar"});
+            Launcher.main(new String[]{"src/test/resources/sample-configuration.xml", new File(org.h2.Driver.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getAbsolutePath()});
         } finally {
             new File("doc/PUBLIC.html").deleteOnExit();
             new File("doc/PUBLIC.pdf").deleteOnExit();

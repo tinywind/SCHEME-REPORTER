@@ -5,12 +5,14 @@ import org.gradle.api.file.FileCollection
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.TaskAction
+import org.gradle.work.DisableCachingByDefault
 import org.tinywind.schemereporter.SchemeReporter
 import org.tinywind.schemereporter.jaxb.Configuration
 import java.net.URLClassLoader
 import java.sql.Driver
 import javax.inject.Inject
 
+@DisableCachingByDefault(because = "Reads schema metadata from a live JDBC connection")
 abstract class SchemeReporterTask @Inject constructor(
     @get:Internal
     private val extension: SchemeReporterExtension,

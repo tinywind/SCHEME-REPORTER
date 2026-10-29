@@ -97,7 +97,7 @@ public class PdfReporter implements Reportable {
         document.setMargins(PAGE_MARGIN, PAGE_MARGIN, PAGE_MARGIN, PAGE_MARGIN);
         document.setFont(font);
 
-        document.add(new Paragraph(new Text("Table of contents").setFontSize(14).setBold()).setTextAlignment(TextAlignment.CENTER));
+        document.add(new Paragraph(new Text("Table of contents").setFontSize(14).simulateBold()).setTextAlignment(TextAlignment.CENTER));
 
         if (!enums.isEmpty()) {
             document.add(itemOfTableContents("Enum Definition", "Enum Definition"));
@@ -175,7 +175,7 @@ public class PdfReporter implements Reportable {
     }
 
     private Paragraph itemOfTableContents(String name, String desc) {
-        return new Paragraph().setAction(PdfAction.createGoTo(name)).addTabStops(new TabStop(540, TabAlignment.RIGHT, new DottedLine())).add(new Text(desc).setFontSize(12).setItalic()).add(new Tab());
+        return new Paragraph().setAction(PdfAction.createGoTo(name)).addTabStops(new TabStop(540, TabAlignment.RIGHT, new DottedLine())).add(new Text(desc).setFontSize(12).simulateItalic()).add(new Tab());
     }
 
     private Paragraph leafItemOfTableContents(String name, String desc) {
@@ -235,7 +235,7 @@ public class PdfReporter implements Reportable {
             final String type = column.getType().getType();
             if (type.equalsIgnoreCase("USER-DEFINED")) {
                 final String userType = column.getType().getUserType();
-                table.addCell(cell(userType, presentBottom).setAction(PdfAction.createGoTo("enum$" + userType)).setItalic().setFontColor(darkBlue));
+                table.addCell(cell(userType, presentBottom).setAction(PdfAction.createGoTo("enum$" + userType)).simulateItalic().setFontColor(darkBlue));
             } else {
                 table.addCell(cell(type + (column.getType().getLength() != 0 ? "(" + column.getType().getLength() + ")" : ""), presentBottom));
             }
@@ -299,7 +299,7 @@ public class PdfReporter implements Reportable {
                 for (ColumnDefinition column : fkey.getReferencedColumns()) text.append(" ").append(column.getName());
             else for (ColumnDefinition column : fkey.getKeyColumns()) text.append(" ").append(column.getName());
             final Paragraph paragraph = new Paragraph(text.toString());
-            div.add(referenced ? paragraph.setItalic().setFontColor(darkBlue).setAction(PdfAction.createGoTo("key$" + fkey.getReferencedKey().getName())) : paragraph);
+            div.add(referenced ? paragraph.simulateItalic().setFontColor(darkBlue).setAction(PdfAction.createGoTo("key$" + fkey.getReferencedKey().getName())) : paragraph);
         }
     }
 
