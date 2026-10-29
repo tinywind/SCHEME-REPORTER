@@ -3,6 +3,9 @@ package org.tinywind
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.h2.tools.Server
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfReader
+import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor
 import org.junit.After
 import org.junit.AfterClass
 import org.junit.Assert.assertEquals
@@ -59,14 +62,18 @@ class SchemeReporterPluginFunctionalTest(
             val params = mutableListOf<Array<Any>>()
 
             val jdk17 = jdkPath("17")
+            val jdk21 = jdkPath("21")
             val jdk25 = jdkPath("25")
 
             if (jdk17 != null) {
                 params.add(arrayOf("8.6", jdk17, "Gradle 8.6 + JDK 17"))
-                params.add(arrayOf("9.3.0", jdk17, "Gradle 9.3.0 + JDK 17"))
+                params.add(arrayOf("9.8.2", jdk17, "Gradle 9.8.2 + JDK 17"))
+            }
+            if (jdk21 != null) {
+                params.add(arrayOf("9.8.2", jdk21, "Gradle 9.8.2 + JDK 21"))
             }
             if (jdk25 != null) {
-                params.add(arrayOf("9.3.0", jdk25, "Gradle 9.3.0 + JDK 25"))
+                params.add(arrayOf("9.8.2", jdk25, "Gradle 9.8.2 + JDK 25"))
             }
 
             require(params.isNotEmpty()) { "No JDK found. Install JDK 17 or 25 via SDKMAN." }
@@ -105,6 +112,7 @@ class SchemeReporterPluginFunctionalTest(
             }
 
             apply(plugin = "org.tinywind.scheme-reporter")
+            check(java.io.ObjectInputFilter.Config.getSerialFilter() != null) { "Missing build serialization filter" }
 
             repositories {
                 mavenLocal()
@@ -112,7 +120,7 @@ class SchemeReporterPluginFunctionalTest(
             }
 
             dependencies {
-                "schemaReporter"("com.h2database:h2:2.2.224")
+                "schemaReporter"("com.h2database:h2:2.5.252")
             }
 
             configure<org.tinywind.SchemeReporterExtension> {
@@ -149,6 +157,10 @@ class SchemeReporterPluginFunctionalTest(
             .withEnvironment(
                 System.getenv().toMutableMap().apply {
                     put("JAVA_HOME", javaHome)
+                    put("JAVA_TOOL_OPTIONS", listOfNotNull(
+                        get("JAVA_TOOL_OPTIONS"),
+                        "-Djdk.serialFilter=${System.getProperty("jdk.serialFilter")}",
+                    ).joinToString(" "))
                 }
             )
             .forwardOutput()
@@ -163,6 +175,13 @@ class SchemeReporterPluginFunctionalTest(
 
         val pdfFiles = outputDir.listFiles()?.filter { it.extension == "pdf" } ?: emptyList()
         assertTrue("At least one PDF report should be generated", pdfFiles.isNotEmpty())
+        PdfDocument(PdfReader(pdfFiles.first().absolutePath)).use { pdf ->
+            assertTrue("Report should have pages", pdf.numberOfPages > 0)
+            val text = (1..pdf.numberOfPages).joinToString("\n") { page ->
+                PdfTextExtractor.getTextFromPage(pdf.getPage(page))
+            }
+            assertTrue("Report should describe the actual sample table", text.contains("PUBLIC_FILE"))
+        }
     }
 
     private fun buildPluginClasspath(): List<String> {
