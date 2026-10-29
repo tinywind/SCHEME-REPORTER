@@ -1,6 +1,6 @@
 # Dependency compatibility notes
 
-The dependency update requires Java 21 or later and preserves the existing report, CLI, Maven, and Gradle interfaces. Maven compiles with `--release 21`, and the Gradle plugin uses a Java 21 toolchain. It does not publish new artifacts.
+Version 2.0.0 requires Java 21 or later and Maven 3.10 or later. It preserves the existing report, CLI, Maven, and Gradle interfaces. Maven compiles with `--release 21`, and the Gradle plugin uses a Java 21 toolchain.
 
 - jOOQ 3.21.9 Open Source requires Java 21; its class-file version is 65. The Java 21 baseline replaces the previous Java 17 target so both `jooq` and `jooq-meta` can use that release. See the [JDK support matrix](https://www.jooq.org/download/support-matrix-jdk).
 - The SLF4J BOM and simple provider both use 2.0.20.

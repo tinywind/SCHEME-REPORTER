@@ -4,8 +4,8 @@ The Scheme Reporter Gradle Plugin generates database schema reports in various f
 
 ## Prerequisites
 
-- **JDK**: 17 or later
-- **Gradle**: 8.x or 9.x
+- **JDK**: 21 or later
+- **Gradle**: 8.6 on JDK 21, or 9.8.2 on JDK 21/25
 
 ## Installation
 
@@ -13,7 +13,7 @@ Add the plugin to your `build.gradle.kts`:
 
 ```kotlin
 plugins {
-    id("org.tinywind.scheme-reporter") version "1.0.2"
+    id("org.tinywind.scheme-reporter") version "2.0.0"
 }
 
 repositories {
