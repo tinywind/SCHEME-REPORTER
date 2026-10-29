@@ -33,10 +33,10 @@ def run(name, env, protected):
     text = log.read_text(errors="replace")
     receipts.append({"name": name, "exit": result.returncode, "log": str(log)})
     (work / "receipt.json").write_text(json.dumps(receipts, indent=2) + "\n")
-    if protected:
-        assert result.returncode == 0 and "WRAPPER_POLICY_PRESERVED" in text, f"{name}: {log}"
-    else:
-        assert result.returncode != 0 and "preconfigured serialization filter" in text.lower(), f"{name}: {log}"
+    valid = result.returncode == 0 and "WRAPPER_POLICY_PRESERVED" in text if protected else result.returncode != 0 and "preconfigured serialization filter" in text.lower()
+    if not valid:
+        print(text[-8000:], flush=True)
+        raise AssertionError(f"{name}: {log}")
     print(name, result.returncode, flush=True)
 
 run("retained-option", dict(base, JAVA_TOOL_OPTIONS=retained), True)

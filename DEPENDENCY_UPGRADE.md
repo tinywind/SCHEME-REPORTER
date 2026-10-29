@@ -31,7 +31,7 @@ Developer builds must use the protected wrapper and retain the project settings.
 
 ## Source analysis
 
-The explicit CodeQL workflow compiles the Maven reactor and both Gradle plugin source sets before Java/Kotlin analysis. It also analyzes the repository Actions workflows. Raw SARIF checks require nonzero Kotlin LOC and the exact plugin source paths. `SCHEME_CODEQL_UPLOAD` must remain unset until the replacement analysis has passed review; the existing default setup stays enabled during that verification.
+The explicit CodeQL workflow compiles the Maven reactor and both Gradle plugin source sets before Java/Kotlin analysis. It also analyzes the repository Actions workflows, with PR query filtering disabled. Both validation workflows check out the exact PR head. Raw SARIF checks require nonzero Kotlin LOC and the exact plugin source paths. `SCHEME_CODEQL_UPLOAD` must remain unset until the replacement analysis has passed review; the existing default setup stays enabled during that verification.
 
 ## Verification scope
 

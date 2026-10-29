@@ -46,7 +46,8 @@ if language == "java-kotlin":
 else:
     expected = [".github/workflows/dependency-compatibility.yml", ".github/workflows/codeql-source.yml"]
 missing = [name for name in expected if not any(uri.endswith(name) for uri in locations)]
-summary = {"language": language, "metrics": metrics, "expected_source_paths": expected, "missing_source_paths": missing, "result_count": len(findings)}
+summary_metrics = [m for m in metrics if "/summary/lines-of-code" in m.get("ruleId", m.get("rule", {}).get("id", ""))]
+summary = {"language": language, "metrics": summary_metrics, "expected_source_paths": expected, "missing_source_paths": missing, "result_count": len(findings), "findings": [{"rule": r.get("ruleId"), "message": r.get("message"), "locations": r.get("locations")} for r in findings]}
 (report_directory / ("coverage-" + language + ".json")).write_text(json.dumps(summary, indent=2) + "\n")
 print(json.dumps(summary, indent=2))
 assert not missing, f"Source paths missing from raw SARIF: {missing}"
