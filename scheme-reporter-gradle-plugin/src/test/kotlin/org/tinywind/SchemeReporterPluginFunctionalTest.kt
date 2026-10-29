@@ -17,6 +17,7 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.tinywind.schemereporter.sample.Creator
 import java.io.File
+import java.nio.file.Files
 
 @RunWith(Parameterized::class)
 class SchemeReporterPluginFunctionalTest(
@@ -86,10 +87,7 @@ class SchemeReporterPluginFunctionalTest(
 
     @Before
     fun setup() {
-        projectDir = File.createTempFile("scheme-reporter-test-", "").apply {
-            delete()
-            mkdirs()
-        }
+        projectDir = Files.createTempDirectory("scheme-reporter-test-").toFile()
         outputDir = File(projectDir, "build/reports/schema")
 
         File(projectDir, "settings.gradle.kts").writeText(
