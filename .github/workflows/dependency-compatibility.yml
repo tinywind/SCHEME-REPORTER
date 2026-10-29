@@ -17,6 +17,7 @@ jobs:
           distribution: temurin
           java-version: "17"
       - name: Install current Maven artifacts locally
+        shell: cmd
         run: mvn -B -ntp -DskipTests -Dgpg.skip=true install
       - name: Verify the Windows bootstrap with delayed expansion enabled
         working-directory: scheme-reporter-gradle-plugin
