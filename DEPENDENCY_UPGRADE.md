@@ -1,14 +1,15 @@
 # Dependency compatibility notes
 
-The dependency update keeps the Java 17 target and the existing report, CLI, Maven, and Gradle interfaces. It does not publish new artifacts.
+The dependency update requires Java 21 or later and preserves the existing report, CLI, Maven, and Gradle interfaces. Maven compiles with `--release 21`, and the Gradle plugin uses a Java 21 toolchain. It does not publish new artifacts.
 
-- jOOQ uses the Java 17 compatible 3.19.39 line. The proposed 3.21.9 Open Source artifacts require Java 21; their class-file version is 65, compared with 61 for 3.19.39. See the [JDK support matrix](https://www.jooq.org/download/support-matrix-jdk).
+- jOOQ 3.21.9 Open Source requires Java 21; its class-file version is 65. The Java 21 baseline replaces the previous Java 17 target so both `jooq` and `jooq-meta` can use that release. See the [JDK support matrix](https://www.jooq.org/download/support-matrix-jdk).
+- The SLF4J BOM and simple provider both use 2.0.20.
 - iText 9 uses `simulateBold()` and `simulateItalic()` for the simulated font styles previously selected by `setBold()` and `setItalic()`.
 - docx4j 17 uses the JAXB reference implementation. Loading both that provider and MOXy caused a `ClassCastException` when creating DOCX files.
 - Graphviz uses the GraalJS engine without the obsolete J2V8 native runtime. The standalone assembly preserves the multi-release manifest and merges service descriptors as required by [GraalVM embedding guidance](https://github.com/oracle/graal/blob/master/docs/reference-manual/embedding/embed-languages.md#uber-jar-file-creation).
-- The standalone distribution retains Derby 10.17.1.0, which requires Java 21. The other bundled JDBC drivers load on Java 17. The Derby integration test runs on Java 21 or later and is skipped on Java 17.
+- The standalone distribution retains Derby 10.17.1.0, which requires Java 21. The bundled-driver checks and actual Derby export run on every supported test JDK.
 - The obsolete H2 1.4.196 test JAR is replaced by the declared H2 dependency. The optional CLI JDBC JAR argument remains supported.
-- The Gradle wrapper is pinned to 9.8.2 with its distribution checksum. The plugin keeps a Java 17 toolchain.
+- The Gradle wrapper is pinned to 9.8.2 with its distribution checksum. Consumer tests cover Gradle 8.6 and 9.8.2 on Java 21, and Gradle 9.8.2 on Java 25.
 
 ## OGNL advisory disposition
 
@@ -32,10 +33,10 @@ Developer builds must use the protected wrapper and retain the project settings.
 
 ## Source analysis
 
-The explicit CodeQL workflow compiles the Maven reactor and both Gradle plugin source sets before Java/Kotlin analysis. It also analyzes the repository Actions workflows, with PR query filtering disabled. Both validation workflows check out the exact PR head. Raw SARIF checks require nonzero Kotlin LOC and the exact plugin source paths. `SCHEME_CODEQL_UPLOAD` must remain unset until the replacement analysis has passed review; the existing default setup stays enabled during that verification.
+The explicit CodeQL workflow compiles the Maven reactor and both Gradle plugin source sets before Java/Kotlin analysis. It also analyzes the repository Actions workflows, with PR query filtering disabled. Both validation workflows check out the exact PR head. Raw SARIF checks require nonzero Kotlin LOC and the exact plugin source paths. The repository variable `SCHEME_CODEQL_UPLOAD=true` enables SARIF and database uploads from this explicit workflow.
 
 ## Verification scope
 
-The compatibility checks cover actual HTML, PDF, XLSX, and DOCX exports from disposable H2 schemas, report contents and relationship images, custom HTML templates, XML configuration, JDBC driver loading, a Derby export on Java 21, packaged CLI usage and its JDBC JAR argument, the Maven generate goal and skip option, and the Gradle consumer task. External database server connections and publication are outside these checks.
+The compatibility checks cover actual HTML, PDF, XLSX, and DOCX exports from disposable H2 schemas, report contents and relationship images, custom HTML templates, XML configuration, JDBC driver loading, a Derby export on each supported test JDK, packaged CLI usage and its JDBC JAR argument, the Maven generate goal and skip option, and the Gradle consumer task. External database server connections and publication are outside these checks.
 
 The existing Maven goal logs report-generation failures and returns normally, so a Maven exit code of zero alone does not prove that a report was created. Negative checks must inspect the diagnostic and confirm that no report was produced.

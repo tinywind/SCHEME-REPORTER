@@ -13,8 +13,8 @@ SCHEME-REPORTER is a tool designed to generate reports from remote databases in 
 
 | Component | Supported Versions |
 |---|---|
-| **JDK** | 17+ |
-| **Gradle** | 8.x, 9.x |
+| **JDK** | 21+ |
+| **Gradle** | 8.6 (JDK 21), 9.8.2 (JDK 21/25) |
 | **Maven** | 3.x |
 
 ## Configure Gradle
