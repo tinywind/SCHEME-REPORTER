@@ -1,8 +1,8 @@
 plugins {
-    kotlin("jvm") version "2.1.0"
+    kotlin("jvm") version "2.4.21"
     `java-gradle-plugin`
     `maven-publish`
-    id("com.gradle.plugin-publish") version "2.0.0"
+    id("com.gradle.plugin-publish") version "2.2.1"
 }
 
 group = "org.tinywind"
@@ -20,7 +20,7 @@ dependencies {
     testImplementation("junit:junit:4.13.2")
     testImplementation(gradleTestKit())
     testImplementation("org.tinywind:scheme-reporter-sample-database:1.0.2")
-    testImplementation("com.h2database:h2:2.2.224")
+    testImplementation("com.h2database:h2:2.5.252")
 }
 
 gradlePlugin {
