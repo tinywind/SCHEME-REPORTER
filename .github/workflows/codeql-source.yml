@@ -1,0 +1,60 @@
+name: CodeQL source coverage
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  source-analysis:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: java-kotlin
+            build-mode: manual
+          - language: actions
+            build-mode: none
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - if: matrix.language == 'java-kotlin'
+        uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          queries: security-extended
+          db-location: .tmp/codeql/databases
+      - name: Compile Maven sources and install local artifacts
+        if: matrix.language == 'java-kotlin'
+        run: mvn -B -ntp -DskipTests -Dgpg.skip=true install
+      - name: Compile Gradle plugin and test sources with the protected wrapper
+        if: matrix.language == 'java-kotlin'
+        working-directory: scheme-reporter-gradle-plugin
+        run: ./gradlew --max-workers=2 clean classes testClasses
+      - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370
+        with:
+          category: /language:${{ matrix.language }}
+          output: .tmp/codeql/results
+          upload: ${{ vars.SCHEME_CODEQL_UPLOAD == 'true' && 'always' || 'never' }}
+          upload-database: ${{ vars.SCHEME_CODEQL_UPLOAD == 'true' }}
+      - name: Verify raw SARIF source coverage
+        run: python3 .github/scripts/verify-codeql-coverage.py "${{ matrix.language }}" .tmp/codeql/results
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        if: always()
+        with:
+          name: codeql-source-${{ matrix.language }}
+          path: |
+            .tmp/codeql/results/*.sarif
+            .tmp/codeql/results/coverage-*.json
+          include-hidden-files: true
+          retention-days: 7

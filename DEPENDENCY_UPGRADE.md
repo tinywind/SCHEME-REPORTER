@@ -29,6 +29,10 @@ The wrappers reject preconfigured serialization filters or filter factories in `
 
 Developer builds must use the protected wrapper and retain the project settings. Bypassing the wrapper, dropping `JAVA_TOOL_OPTIONS`, reusing an older unprotected daemon, or using the Kotlin build plugin outside this project can remove that protection. Keep build caches private and do not restore caches from untrusted sources.
 
+## Source analysis
+
+The explicit CodeQL workflow compiles the Maven reactor and both Gradle plugin source sets before Java/Kotlin analysis. It also analyzes the repository Actions workflows. Raw SARIF checks require nonzero Kotlin LOC and the exact plugin source paths. `SCHEME_CODEQL_UPLOAD` must remain unset until the replacement analysis has passed review; the existing default setup stays enabled during that verification.
+
 ## Verification scope
 
 The compatibility checks cover actual HTML, PDF, XLSX, and DOCX exports from disposable H2 schemas, report contents and relationship images, custom HTML templates, XML configuration, JDBC driver loading, a Derby export on Java 21, packaged CLI usage and its JDBC JAR argument, the Maven generate goal and skip option, and the Gradle consumer task. External database server connections and publication are outside these checks.
