@@ -18,10 +18,13 @@ for name in option_names + ["SCHEME_REPORTER_SERIAL_FILTER", "SCHEME_REPORTER_GU
 retained = f'-Djava.io.tmpdir="{runtime}" -DschemeReporter.retained="kept & value!"'
 init_script = work / "assert-environment.gradle"
 init_script.write_text("assert System.getProperty('schemeReporter.retained') == 'kept & value!'\nassert java.io.ObjectInputFilter.Config.getSerialFilter() != null\nprintln('WRAPPER_POLICY_PRESERVED')\n")
+empty_script = work / "assert-empty-environment.gradle"
+empty_script.write_text("assert java.io.ObjectInputFilter.Config.getSerialFilter() != null\nprintln('WRAPPER_POLICY_PRESERVED')\n")
 receipts = []
 
 def run(name, env, protected):
-    args = ["help", "--quiet", "--init-script", str(init_script)] if protected else ["--version"]
+    probe_script = empty_script if name == "empty-options" else init_script
+    args = ["help", "--quiet", "--init-script", str(probe_script)] if protected else ["--version"]
     wrapper = project / ("gradlew.bat" if os.name == "nt" else "gradlew")
     command = [str(wrapper), *args]
     if os.name == "nt":
@@ -39,6 +42,7 @@ def run(name, env, protected):
         raise AssertionError(f"{name}: {log}")
     print(name, result.returncode, flush=True)
 
+run("empty-options", dict(base, JAVA_OPTS=f'-Djava.io.tmpdir="{runtime}"'), True)
 run("retained-option", dict(base, JAVA_TOOL_OPTIONS=retained), True)
 guarded = retained + " -Djdk.serialFilter=" + filter_pattern
 inherited = dict(base, JAVA_TOOL_OPTIONS=guarded, SCHEME_REPORTER_SERIAL_FILTER=filter_pattern, SCHEME_REPORTER_GUARDED_JAVA_TOOL_OPTIONS=guarded)
