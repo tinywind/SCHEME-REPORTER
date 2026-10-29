@@ -2,6 +2,7 @@
 
 The dependency update keeps the Java 17 target and the existing report, CLI, Maven, and Gradle interfaces. It does not publish new artifacts.
 
+- jOOQ uses the Java 17 compatible 3.19.39 line. The proposed 3.21.9 Open Source artifacts require Java 21; their class-file version is 65, compared with 61 for 3.19.39. See the [JDK support matrix](https://www.jooq.org/download/support-matrix-jdk).
 - iText 9 uses `simulateBold()` and `simulateItalic()` for the simulated font styles previously selected by `setBold()` and `setItalic()`.
 - docx4j 17 uses the JAXB reference implementation. Loading both that provider and MOXy caused a `ClassCastException` when creating DOCX files.
 - Graphviz uses the GraalJS engine without the obsolete J2V8 native runtime. The standalone assembly preserves the multi-release manifest and merges service descriptors as required by [GraalVM embedding guidance](https://github.com/oracle/graal/blob/master/docs/reference-manual/embedding/embed-languages.md#uber-jar-file-creation).
