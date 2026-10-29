@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "org.tinywind"
-version = "1.0.2"
+version = "2.0.0"
 
 kotlin {
     jvmToolchain(21)
@@ -20,11 +20,11 @@ repositories {
 }
 
 dependencies {
-    implementation("org.tinywind:scheme-reporter:1.0.2")
+    implementation("org.tinywind:scheme-reporter:2.0.0")
     implementation(gradleApi())
     testImplementation("junit:junit:4.13.2")
     testImplementation(gradleTestKit())
-    testImplementation("org.tinywind:scheme-reporter-sample-database:1.0.2")
+    testImplementation("org.tinywind:scheme-reporter-sample-database:2.0.0")
     testImplementation("com.h2database:h2:2.5.252")
 }
 

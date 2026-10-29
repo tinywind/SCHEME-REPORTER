@@ -36,3 +36,14 @@ updates:
       update-types:
       - minor
       - patch
+- package-ecosystem: github-actions
+  directory: /
+  schedule:
+    interval: weekly
+    day: monday
+    time: "03:00"
+    timezone: Asia/Phnom_Penh
+  open-pull-requests-limit: 5
+  commit-message:
+    prefix: chore
+    include: scope

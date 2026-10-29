@@ -15,7 +15,7 @@ SCHEME-REPORTER is a tool designed to generate reports from remote databases in 
 |---|---|
 | **JDK** | 21+ |
 | **Gradle** | 8.6 (JDK 21), 9.8.2 (JDK 21/25) |
-| **Maven** | 3.x |
+| **Maven** | 3.10+ |
 
 ## Configure Gradle
 
@@ -23,7 +23,7 @@ Add the plugin and your JDBC driver to `build.gradle.kts`:
 
 ```kotlin
 plugins {
-    id("org.tinywind.scheme-reporter") version "1.0.2"
+    id("org.tinywind.scheme-reporter") version "2.0.0"
 }
 
 repositories {
@@ -73,7 +73,7 @@ Add the following configuration to your `pom.xml` file:
         <plugin>
             <groupId>org.tinywind</groupId>
             <artifactId>scheme-reporter-maven</artifactId>
-            <version>1.0.2</version>
+            <version>2.0.0</version>
             <executions>
                 <execution>
                     <phase>none</phase>
