@@ -62,22 +62,18 @@ class SchemeReporterPluginFunctionalTest(
         fun parameters(): Collection<Array<Any>> {
             val params = mutableListOf<Array<Any>>()
 
-            val jdk17 = jdkPath("17")
             val jdk21 = jdkPath("21")
             val jdk25 = jdkPath("25")
 
-            if (jdk17 != null) {
-                params.add(arrayOf("8.6", jdk17, "Gradle 8.6 + JDK 17"))
-                params.add(arrayOf("9.8.2", jdk17, "Gradle 9.8.2 + JDK 17"))
-            }
             if (jdk21 != null) {
+                params.add(arrayOf("8.6", jdk21, "Gradle 8.6 + JDK 21"))
                 params.add(arrayOf("9.8.2", jdk21, "Gradle 9.8.2 + JDK 21"))
             }
             if (jdk25 != null) {
                 params.add(arrayOf("9.8.2", jdk25, "Gradle 9.8.2 + JDK 25"))
             }
 
-            require(params.isNotEmpty()) { "No JDK found. Install JDK 17 or 25 via SDKMAN." }
+            require(params.isNotEmpty()) { "No JDK found. Install JDK 21 or 25 via SDKMAN." }
             return params
         }
     }

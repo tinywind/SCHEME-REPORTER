@@ -17,7 +17,7 @@ jobs:
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad
         with:
           distribution: temurin
-          java-version: "17"
+          java-version: "21"
       - name: Install current Maven artifacts locally
         shell: cmd
         run: mvn -B -ntp -DskipTests -Dgpg.skip=true install

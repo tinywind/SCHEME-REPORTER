@@ -23,14 +23,13 @@ import java.sql.Statement;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
-import static org.junit.Assume.assumeTrue;
 
 public class BundledDriverCompatibilityTest {
     @Rule
     public TemporaryFolder temporary = new TemporaryFolder(new File("target"));
 
     @Test
-    public void sixJava17DriversLoadAndRecognizeTheirJdbcUrls() throws Exception {
+    public void sixBundledDriversLoadAndRecognizeTheirJdbcUrls() throws Exception {
         String[][] drivers = {
                 {"org.h2.Driver", "jdbc:h2:mem:driver_check"},
                 {"org.hsqldb.jdbc.JDBCDriver", "jdbc:hsqldb:mem:driver_check"},
@@ -46,8 +45,7 @@ public class BundledDriverCompatibilityTest {
     }
 
     @Test
-    public void derbyCreatesARealInMemorySchemaReportOnJava21() throws Exception {
-        assumeTrue("The bundled Derby 10.17 driver requires Java 21 or later", Runtime.version().feature() >= 21);
+    public void derbyCreatesARealInMemorySchemaReport() throws Exception {
         String previousLog = System.getProperty("derby.stream.error.file");
         System.setProperty("derby.stream.error.file", temporary.newFile("derby.log").getAbsolutePath());
         String jdbcUrl = "jdbc:derby:memory:report_" + UUID.randomUUID().toString().replace("-", "");

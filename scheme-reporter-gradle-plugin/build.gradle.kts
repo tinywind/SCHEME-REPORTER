@@ -11,7 +11,7 @@ group = "org.tinywind"
 version = "1.0.2"
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 repositories {
