@@ -24,7 +24,7 @@
     <properties>
         <jooq.version>3.19.30</jooq.version>
         <jetty.version>9.4.54.v20240208</jetty.version>
-        <itextpdf.version>7.2.6</itextpdf.version>
+        <itextpdf.version>9.8.0</itextpdf.version>
         <docx4j.version>11.5.14</docx4j.version>
     </properties>
 
