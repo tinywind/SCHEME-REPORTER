@@ -3,6 +3,7 @@ package org.tinywind.schemereporter.standalone;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfReader;
 import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor;
+import com.mysql.cj.x.protobuf.MysqlxDatatypes;
 import guru.nidi.graphviz.engine.Graphviz;
 import guru.nidi.graphviz.engine.GraphvizJdkEngine;
 import org.junit.Rule;
@@ -42,6 +43,18 @@ public class BundledDriverCompatibilityTest {
             Driver driver = (Driver) Class.forName(entry[0]).getConstructor().newInstance();
             assertTrue(entry[0], driver.acceptsURL(entry[1]));
         }
+    }
+
+    @Test
+    public void mysqlGeneratedProtobufMessagesRoundTripWithBundledRuntime() throws Exception {
+        MysqlxDatatypes.Any message = MysqlxDatatypes.Any.newBuilder()
+                .setType(MysqlxDatatypes.Any.Type.SCALAR)
+                .setScalar(MysqlxDatatypes.Scalar.newBuilder()
+                        .setType(MysqlxDatatypes.Scalar.Type.V_UINT).setVUnsignedInt(42L))
+                .build();
+        MysqlxDatatypes.Any parsed = MysqlxDatatypes.Any.parseFrom(message.toByteArray());
+        assertEquals(message, parsed);
+        assertEquals(42L, parsed.getScalar().getVUnsignedInt());
     }
 
     @Test

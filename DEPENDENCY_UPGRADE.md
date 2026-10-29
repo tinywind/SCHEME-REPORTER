@@ -4,6 +4,8 @@ Version 2.0.0 requires Java 21 or later and Maven 3.10 or later. It preserves th
 
 - jOOQ 3.21.9 Open Source requires Java 21; its class-file version is 65. The Java 21 baseline replaces the previous Java 17 target so both `jooq` and `jooq-meta` can use that release. See the [JDK support matrix](https://www.jooq.org/download/support-matrix-jdk).
 - The SLF4J BOM and simple provider both use 2.0.20.
+- MySQL Connector/J 26.10.0 and protobuf-java 4.36.2 are updated together. The driver's generated X Protocol messages fail to initialize with protobuf 3.25.9 because `RuntimeVersion$RuntimeDomain` is missing. A bundled-driver test round-trips a generated message to check this runtime boundary.
+- The active JAXB generator remains `org.jvnet.jaxb:jaxb-maven-plugin` 4.0.16 with the existing schema, bindings, and fluent API plugins; its annotation plugin uses 1.1.0. The separately managed Mojo `jaxb2-maven-plugin` uses 4.2.0 and is not the active reactor generator.
 - iText 9 uses `simulateBold()` and `simulateItalic()` for the simulated font styles previously selected by `setBold()` and `setItalic()`.
 - docx4j 17 uses the JAXB reference implementation. Loading both that provider and MOXy caused a `ClassCastException` when creating DOCX files.
 - Graphviz uses the GraalJS engine without the obsolete J2V8 native runtime. The standalone assembly preserves the multi-release manifest and merges service descriptors as required by [GraalVM embedding guidance](https://github.com/oracle/graal/blob/master/docs/reference-manual/embedding/embed-languages.md#uber-jar-file-creation).
