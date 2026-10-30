@@ -61,7 +61,7 @@ schemaReporter {
 ./gradlew generateSchemeReport
 ```
 
-For more details on using the Scheme Reporter Gradle Plugin, refer to the [Scheme Reporter Gradle Plugin README](https://github.com/tinywind/SCHEME-REPORTER/blob/master/scheme-reporter-gradle-plugin/README.md).
+For more details on using the Scheme Reporter Gradle Plugin, refer to the [Scheme Reporter Gradle Plugin README](https://github.com/tinywind/SCHEME-REPORTER/blob/main/scheme-reporter-gradle-plugin/README.md).
 
 ## Maven
 
@@ -120,10 +120,10 @@ mvn org.tinywind:scheme-reporter-maven:2.0.0:generate
 
 ## Output samples
 
-- [HTML Report](https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.html)
-- [PDF Report](https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.pdf)
-- [Excel Report](https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.xlsx)
-- [DOCX Report](https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.docx)
+- [HTML Report](https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/main/sample-output.html)
+- [PDF Report](https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/main/sample-output.pdf)
+- [Excel Report](https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/main/sample-output.xlsx)
+- [DOCX Report](https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/main/sample-output.docx)
 
 ## License
 
