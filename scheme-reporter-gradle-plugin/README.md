@@ -1,11 +1,11 @@
-# Scheme Reporter Gradle Plugin
+# Scheme Reporter Gradle plugin
 
-The Scheme Reporter Gradle Plugin generates database schema reports in various formats such as PDF, DOCX, Excel, and HTML.
+Generate database schema reports in HTML, PDF, Excel, and DOCX from Gradle.
 
 ## Prerequisites
 
-- **JDK**: 21 or later
-- **Gradle**: 8.6 on JDK 21, or 9.8.2 on JDK 21/25
+- JDK: 21 or later
+- Gradle: 8.6 on JDK 21, or 9.8.2 on JDK 21/25
 
 ## Installation
 
@@ -49,7 +49,7 @@ schemaReporter {
 }
 ```
 
-### Configuration Reference
+### Configuration reference
 
 - **jdbc**
     - `driverClass` - Fully qualified name of the JDBC driver class
@@ -65,7 +65,7 @@ schemaReporter {
     - `template` - (Optional) Thymeleaf template file path for the HTML reporter. Uses the default template if not set
     - `outputDirectory` - Directory where the generated reports will be saved
 
-### MySQL Example
+### MySQL example
 
 ```kotlin
 dependencies {
@@ -97,8 +97,6 @@ schemaReporter {
 
 ## License
 
-**Licensed under the Apache License, Version 2.0**
+Apache License 2.0. See [LICENSE.txt](../LICENSE.txt).
 
-If use on commercial databases, refer `http://www.jooq.org/legal/licensing`
-
----
+If you use the tool with commercial databases, see the [jOOQ licensing page](http://www.jooq.org/legal/licensing).
