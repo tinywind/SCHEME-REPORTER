@@ -280,7 +280,6 @@
                             <args>
                                 <arg>-Xxew</arg>
                                 <arg>-Xxew:instantiate lazy</arg>
-                                <arg>-Xxew:delete</arg>
                                 <arg>-Xfluent-api</arg>
                                 <arg>-Xdefault-value</arg>
                                 <arg>-Xannotate</arg>
