@@ -47,3 +47,7 @@ updates:
   commit-message:
     prefix: chore
     include: scope
+  groups:
+    codeql:
+      patterns:
+      - 'github/codeql-action*'
