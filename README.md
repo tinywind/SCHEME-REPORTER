@@ -23,7 +23,7 @@ Add the plugin and your JDBC driver to `build.gradle.kts`:
 
 ```kotlin
 plugins {
-    id("org.tinywind.scheme-reporter") version "2.0.1"
+    id("org.tinywind.scheme-reporter") version "2.0.2"
 }
 
 repositories {
@@ -73,7 +73,7 @@ Add the following configuration to your `pom.xml` file:
         <plugin>
             <groupId>org.tinywind</groupId>
             <artifactId>scheme-reporter-maven</artifactId>
-            <version>2.0.1</version>
+            <version>2.0.2</version>
             <executions>
                 <execution>
                     <phase>none</phase>
@@ -115,7 +115,7 @@ Add the following configuration to your `pom.xml` file:
 ### Run the Maven goal
 
 ```sh
-mvn org.tinywind:scheme-reporter-maven:2.0.1:generate
+mvn org.tinywind:scheme-reporter-maven:2.0.2:generate
 ```
 
 ## Output samples

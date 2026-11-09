@@ -4,7 +4,7 @@ mvn package org.apache.maven.plugins:maven-assembly-plugin:3.8.0:single
 java -jar target/scheme-reporter-standalone-{version}-jar-with-dependencies.jar {configuration-xml} \[{jdbc-class-jar}\]
 
 # Run Sample
-java -jar target/scheme-reporter-standalone-2.0.1-jar-with-dependencies.jar "src/test/resources/sample-configuration.xml"
+java -jar target/scheme-reporter-standalone-2.0.2-jar-with-dependencies.jar "src/test/resources/sample-configuration.xml"
 
 # Output(sample)
 https://raw.githubusercontent.com/tinywind/SCHEME-REPORTER/master/sample-output.html
