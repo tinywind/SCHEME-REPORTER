@@ -24,32 +24,7 @@
 @rem ##########################################################################
 
 @rem Set local scope for the variables, and ensure extensions are enabled
-setlocal EnableExtensions DisableDelayedExpansion
-@rem Block the vulnerable Guava serializers shaded by the Kotlin build plugin.
-set "SCHEME_REPORTER_BUILD_FILTER=!org.jetbrains.kotlin.com.google.common.collect.CompactHashMap;!org.jetbrains.kotlin.com.google.common.collect.CompactHashSet;!org.jetbrains.kotlin.com.google.common.collect.MapMakerInternalMap$*;*"
-setlocal EnableDelayedExpansion
-for %%V in (JAVA_OPTS GRADLE_OPTS JDK_JAVA_OPTIONS _JAVA_OPTIONS) do (
-    set "SCHEME_REPORTER_JVM_OPTIONS=!%%V!"
-    if defined SCHEME_REPORTER_JVM_OPTIONS (
-        if not "!SCHEME_REPORTER_JVM_OPTIONS:-Djdk.serialFilter=!"=="!SCHEME_REPORTER_JVM_OPTIONS!" (
-            set "SCHEME_REPORTER_FILTER_SOURCE=%%V"
-            goto serialFilterConflict
-        )
-    )
-)
-if "!SCHEME_REPORTER_SERIAL_FILTER!"=="!SCHEME_REPORTER_BUILD_FILTER!" if "!JAVA_TOOL_OPTIONS!"=="!SCHEME_REPORTER_GUARDED_JAVA_TOOL_OPTIONS!" goto serialFilterReady
-set "SCHEME_REPORTER_FILTER_SOURCE=JAVA_TOOL_OPTIONS"
-if defined JAVA_TOOL_OPTIONS if not "!JAVA_TOOL_OPTIONS:-Djdk.serialFilter=!"=="!JAVA_TOOL_OPTIONS!" goto serialFilterConflict
-set "JAVA_TOOL_OPTIONS=!JAVA_TOOL_OPTIONS! -Djdk.serialFilter=!SCHEME_REPORTER_BUILD_FILTER!"
-set "SCHEME_REPORTER_SERIAL_FILTER=!SCHEME_REPORTER_BUILD_FILTER!"
-set "SCHEME_REPORTER_GUARDED_JAVA_TOOL_OPTIONS=!JAVA_TOOL_OPTIONS!"
-goto serialFilterReady
-:serialFilterConflict
-1>&2 echo A preconfigured serialization filter in %SCHEME_REPORTER_FILTER_SOURCE% requires explicit policy composition; refusing to replace it.
-"%COMSPEC%" /c exit 1
-goto exitWithErrorLevel
-:serialFilterReady
-setlocal DisableDelayedExpansion
+setlocal EnableExtensions
 
 @rem Catch executions from older scripts and ensure they exit cleanly.
 @rem This can be removed once we can be reasonably confident that few people
@@ -127,10 +102,9 @@ goto exitWithErrorLevel
 
 
 @rem Execute gradlew
-@rem Keep the serialization filter in the environment until the JVM exits.
-"%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -jar "%APP_HOME%\gradle\wrapper\gradle-wrapper.jar" %*
-set "SCHEME_REPORTER_EXIT_CODE=%ERRORLEVEL%"
-endlocal & "%COMSPEC%" /c exit %SCHEME_REPORTER_EXIT_CODE% & call :exitWithErrorLevel & goto exitWithErrorLevel
+@rem endlocal doesn't take effect until after the line is parsed and variables are expanded
+@rem which allows us to clear the local environment before executing the java command
+endlocal & "%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %GRADLE_OPTS% "-Dorg.gradle.appname=%APP_BASE_NAME%" -jar "%APP_HOME%\gradle\wrapper\gradle-wrapper.jar" %* & call :exitWithErrorLevel & goto exitWithErrorLevel
 
 @rem This label must not be changed. We rely on old scripts being able to jump to this point.
 :exitWithErrorLevel
