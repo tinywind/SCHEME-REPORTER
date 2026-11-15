@@ -25,7 +25,7 @@
         <jooq.version>3.21.9</jooq.version>
         <jetty.version>9.4.54.v20240208</jetty.version>
         <itextpdf.version>9.8.0</itextpdf.version>
-        <docx4j.version>17.3.5</docx4j.version>
+        <docx4j.version>17.3.6</docx4j.version>
     </properties>
 
     <dependencies>
@@ -168,7 +168,7 @@
         <dependency>
             <groupId>org.thymeleaf</groupId>
             <artifactId>thymeleaf</artifactId>
-            <version>3.1.5.RELEASE</version>
+            <version>3.1.7.RELEASE</version>
         </dependency>
 
         <!-- jaxb -->
@@ -208,7 +208,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>jaxb2-maven-plugin</artifactId>
-                    <version>4.2.0</version>
+                    <version>4.3.0</version>
                 </plugin>
             </plugins>
         </pluginManagement>
