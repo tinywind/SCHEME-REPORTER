@@ -67,10 +67,10 @@ class SchemeReporterPluginFunctionalTest(
 
             if (jdk21 != null) {
                 params.add(arrayOf("8.6", jdk21, "Gradle 8.6 + JDK 21"))
-                params.add(arrayOf("9.8.2", jdk21, "Gradle 9.8.2 + JDK 21"))
+                params.add(arrayOf("9.9.1", jdk21, "Gradle 9.9.1 + JDK 21"))
             }
             if (jdk25 != null) {
-                params.add(arrayOf("9.8.2", jdk25, "Gradle 9.8.2 + JDK 25"))
+                params.add(arrayOf("9.9.1", jdk25, "Gradle 9.9.1 + JDK 25"))
             }
 
             require(params.isNotEmpty()) { "No JDK found. Install JDK 21 or 25 via SDKMAN." }

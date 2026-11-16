@@ -11,6 +11,10 @@ updates:
   commit-message:
     prefix: chore
     include: scope
+  # Dependabot regenerates wrapper scripts in an isolated directory without build.gradle.kts,
+  # stripping the custom jdk.serialFilter guard; update via `./gradlew wrapper` instead.
+  ignore:
+  - dependency-name: gradle-wrapper
   groups:
     minor-and-patch:
       patterns:
