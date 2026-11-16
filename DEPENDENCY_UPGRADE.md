@@ -11,7 +11,7 @@ Version 2.0.2 requires Java 21 or later and Maven 3.10 or later. It preserves th
 - Graphviz uses the GraalJS engine without the obsolete J2V8 native runtime. The standalone assembly preserves the multi-release manifest and merges service descriptors as required by [GraalVM embedding guidance](https://github.com/oracle/graal/blob/master/docs/reference-manual/embedding/embed-languages.md#uber-jar-file-creation).
 - The standalone distribution retains Derby 10.17.1.0, which requires Java 21. The bundled-driver checks and actual Derby export run on every supported test JDK.
 - The obsolete H2 1.4.196 test JAR is replaced by the declared H2 dependency. The optional CLI JDBC JAR argument remains supported.
-- The Gradle wrapper is pinned to 9.8.2 with its distribution checksum. Consumer tests cover Gradle 8.6 and 9.8.2 on Java 21, and Gradle 9.8.2 on Java 25.
+- The Gradle wrapper is pinned to 9.9.1 with its distribution checksum. Consumer tests cover Gradle 8.6 and 9.9.1 on Java 21, and Gradle 9.9.1 on Java 25.
 
 ## OGNL advisory disposition
 

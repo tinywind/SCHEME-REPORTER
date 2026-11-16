@@ -14,7 +14,7 @@ Generate database schema reports in HTML, PDF, Excel, and DOCX with Maven or Gra
 | Component | Supported versions |
 |---|---|
 | JDK | 21+ |
-| Gradle | 8.6 (JDK 21), 9.8.2 (JDK 21/25) |
+| Gradle | 8.6 (JDK 21), 9.9.1 (JDK 21/25) |
 | Maven | 3.10+ |
 
 ## Gradle

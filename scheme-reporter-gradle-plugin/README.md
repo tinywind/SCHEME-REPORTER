@@ -5,7 +5,7 @@ Generate database schema reports in HTML, PDF, Excel, and DOCX from Gradle.
 ## Prerequisites
 
 - JDK: 21 or later
-- Gradle: 8.6 on JDK 21, or 9.8.2 on JDK 21/25
+- Gradle: 8.6 on JDK 21, or 9.9.1 on JDK 21/25
 
 ## Installation
 
