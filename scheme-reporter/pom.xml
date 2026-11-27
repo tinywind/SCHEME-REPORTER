@@ -23,7 +23,6 @@
 
     <properties>
         <jooq.version>3.21.10</jooq.version>
-        <jetty.version>9.4.54.v20240208</jetty.version>
         <itextpdf.version>9.8.1</itextpdf.version>
         <docx4j.version>17.3.6</docx4j.version>
     </properties>
@@ -90,26 +89,6 @@
         <!-- itextpdf -->
         <dependency>
             <groupId>com.itextpdf</groupId>
-            <artifactId>barcodes</artifactId>
-            <version>${itextpdf.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.itextpdf</groupId>
-            <artifactId>font-asian</artifactId>
-            <version>${itextpdf.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.itextpdf</groupId>
-            <artifactId>forms</artifactId>
-            <version>${itextpdf.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.itextpdf</groupId>
-            <artifactId>hyph</artifactId>
-            <version>${itextpdf.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.itextpdf</groupId>
             <artifactId>io</artifactId>
             <version>${itextpdf.version}</version>
         </dependency>
@@ -121,16 +100,6 @@
         <dependency>
             <groupId>com.itextpdf</groupId>
             <artifactId>layout</artifactId>
-            <version>${itextpdf.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.itextpdf</groupId>
-            <artifactId>pdfa</artifactId>
-            <version>${itextpdf.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.itextpdf</groupId>
-            <artifactId>sign</artifactId>
             <version>${itextpdf.version}</version>
         </dependency>
 
@@ -194,12 +163,6 @@
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.22.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.ant</groupId>
-            <artifactId>ant</artifactId>
-            <version>1.10.18</version>
         </dependency>
     </dependencies>
     <build>

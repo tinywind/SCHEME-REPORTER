@@ -127,7 +127,13 @@ mvn org.tinywind:scheme-reporter-maven:2.0.2:generate
 
 ## License
 
-Licensed under the Apache License, Version 2.0. If you are using this tool with commercial databases, please refer to the [jOOQ licensing page](http://www.jooq.org/legal/licensing) for more information.
+Scheme Reporter source code is licensed under the [Apache License, Version 2.0](LICENSE.txt).
+
+The PDF reporter uses iText, which is available under the AGPL v3 or later or a commercial license. The standalone JAR includes iText. See [iText licensing terms](https://github.com/itext/itext-java/blob/9.8.1/LICENSE.md).
+
+The PDF reporter embeds NanumMyeongjo. The core and standalone distribution JARs include the font and its [SIL Open Font License, Version 1.1](scheme-reporter/src/main/resources/asset/font/OFL.txt).
+
+For jOOQ's database and edition terms, see [jOOQ licensing](https://www.jooq.org/legal/licensing).
 
 ## Contributing
 

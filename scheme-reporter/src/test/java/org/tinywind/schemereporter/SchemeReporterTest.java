@@ -16,14 +16,15 @@
  */
 package org.tinywind.schemereporter;
 
-import org.apache.tools.ant.filters.StringInputStream;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.tinywind.schemereporter.sample.Creator;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
@@ -64,10 +65,9 @@ public class SchemeReporterTest {
         );
 
         try {
-            SchemeReporter.generate(SchemeReporter.load(new StringInputStream(htmlConfig)));
-            SchemeReporter.generate(SchemeReporter.load(new StringInputStream(pdfConfig)));
-            SchemeReporter.generate(SchemeReporter.load(new StringInputStream(excelConfig)));
-            SchemeReporter.generate(SchemeReporter.load(new StringInputStream(docxConfig)));
+            for (String config : List.of(htmlConfig, pdfConfig, excelConfig, docxConfig)) {
+                SchemeReporter.generate(SchemeReporter.load(new ByteArrayInputStream(config.getBytes(StandardCharsets.ISO_8859_1))));
+            }
 
             files.forEach(file -> {
                 assert file.exists();

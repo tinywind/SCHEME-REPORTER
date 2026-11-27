@@ -15,6 +15,12 @@
             <scope>runtime</scope>
         </dependencySet>
     </dependencySets>
+    <files>
+        <file>
+            <source>src/main/resources/META-INF/LICENSE.txt</source>
+            <outputDirectory>META-INF/licenses/scheme-reporter</outputDirectory>
+        </file>
+    </files>
     <containerDescriptorHandlers>
         <containerDescriptorHandler>
             <handlerName>metaInf-services</handlerName>
