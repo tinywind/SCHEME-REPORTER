@@ -18,6 +18,7 @@ package org.tinywind.schemereporter.util;
 
 import guru.nidi.graphviz.attribute.Attributes;
 import guru.nidi.graphviz.attribute.Color;
+import guru.nidi.graphviz.attribute.Label;
 import guru.nidi.graphviz.attribute.Rank;
 import guru.nidi.graphviz.engine.Format;
 import guru.nidi.graphviz.engine.Graphviz;
@@ -27,7 +28,7 @@ import org.apache.batik.transcoder.TranscoderException;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.PNGTranscoder;
-import org.apache.commons.math3.util.Pair;
+import org.jooq.Name;
 import org.jooq.meta.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,11 +36,12 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.Set;
 
 import static guru.nidi.graphviz.attribute.Rank.RankDir.LEFT_TO_RIGHT;
 import static guru.nidi.graphviz.model.Factory.*;
@@ -53,7 +55,6 @@ public class TableImage {
             final String cTable = table.getName();
             MutableNode node = createNode(cTable);
             node.add(Color.RED);
-            node.add(Attributes.attr("weight", 8));
             node.add(Attributes.attr("fillcolor", "grey75"));
 
             final Map<String, MutableNode> refer = new HashMap<>();
@@ -76,7 +77,7 @@ public class TableImage {
                 }
             }
 
-            for (MutableNode rNode : refer.values().stream().distinct().toList()) node = node.addLink(to(rNode));
+            for (MutableNode rNode : refer.values()) node = node.addLink(to(rNode));
             final MutableGraph g = mutGraph(cTable).setDirected(true).add(node);
             referred.values().forEach(g::add);
 
@@ -86,17 +87,24 @@ public class TableImage {
     }
 
     public static String totalRelationSvg(List<TableDefinition> tables) {
-        final Map<String, MutableNode> nodeMap = tables.stream().collect(Collectors.toMap(Definition::getName, table -> createReferNode(table.getName())));
+        final Map<Name, MutableNode> nodeMap = new LinkedHashMap<>();
+        for (TableDefinition table : tables) {
+            final Name name = table.getQualifiedInputNamePart();
+            final MutableNode node = createReferNode(table.getName()).setName("table" + nodeMap.size());
+            nodeMap.put(name, node.add(Label.of(table.getName())));
+        }
+
+        for (TableDefinition table : tables) {
+            final MutableNode source = nodeMap.get(table.getQualifiedInputNamePart());
+            final Set<Name> linkedTargets = new HashSet<>();
+            for (ForeignKeyDefinition key : table.getForeignKeys()) {
+                final Name targetName = key.getReferencedTable().getQualifiedInputNamePart();
+                final MutableNode target = nodeMap.get(targetName);
+                if (target != null && linkedTargets.add(targetName)) source.addLink(to(target));
+            }
+        }
+
         final MutableGraph g = mutGraph("totalRelationSvg").setDirected(true);
-
-        final List<Pair<String, String>> linkedList = new ArrayList<>();
-        tables.forEach(table -> table.getColumns().forEach(column -> column.getForeignKeys().forEach(fkey -> {
-            if (linkedList.contains(Pair.create(table.getName(), fkey.getReferencedTable().getName()))) return;
-            final MutableNode linked = nodeMap.get(fkey.getReferencedTable().getName());
-            nodeMap.put(table.getName(), nodeMap.get(table.getName()).addLink(to(linked)));
-            linkedList.add(Pair.create(table.getName(), fkey.getReferencedTable().getName()));
-        })));
-
         nodeMap.values().forEach(g::add);
         return Graphviz.fromGraph(g.toImmutable().graphAttr().with(Rank.dir(LEFT_TO_RIGHT))).render(Format.SVG).toString();
     }

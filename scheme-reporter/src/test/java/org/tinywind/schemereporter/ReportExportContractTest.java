@@ -13,6 +13,7 @@ import org.tinywind.schemereporter.jaxb.Configuration;
 import org.tinywind.schemereporter.jaxb.Database;
 import org.tinywind.schemereporter.jaxb.Generator;
 import org.tinywind.schemereporter.jaxb.Jdbc;
+import org.tinywind.schemereporter.util.FileUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -41,9 +42,10 @@ public class ReportExportContractTest {
         jdbcUrl = "jdbc:h2:mem:report_" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
         try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
              Statement statement = connection.createStatement()) {
-            statement.execute("CREATE TABLE authors (id BIGINT PRIMARY KEY, name VARCHAR(80) NOT NULL)");
+            statement.execute("CREATE TABLE authors (id BIGINT CONSTRAINT pk_authors PRIMARY KEY, name VARCHAR(80) NOT NULL)");
             statement.execute("CREATE TABLE books (id BIGINT PRIMARY KEY, author_id BIGINT NOT NULL, title VARCHAR(120), CONSTRAINT book_author FOREIGN KEY(author_id) REFERENCES authors(id))");
             statement.execute("COMMENT ON COLUMN books.title IS 'Title & note'");
+            statement.execute("COMMENT ON TABLE books IS 'Books & editions'");
         }
     }
 
@@ -66,6 +68,59 @@ public class ReportExportContractTest {
         assertTrue(html, html.contains("AUTHOR_ID"));
         assertTrue(html, html.contains("<svg"));
         assertTrue(html, html.contains("Title &amp; note"));
+        assertTrue(html, html.contains("<i>Books &amp; editions</i>"));
+    }
+
+    @Test
+    public void enumColumnLinksToItsHeading() throws Exception {
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
+             Statement statement = connection.createStatement()) {
+            statement.execute("CREATE DOMAIN book_state AS ENUM ('pending', 'sent')");
+            statement.execute("ALTER TABLE books ADD state book_state");
+        }
+        Path directory = temporary.newFolder("enum").toPath();
+        Configuration config = configuration("html", directory, null);
+        config.getDatabase().setIncludes("AUTHORS|BOOKS|BOOK_STATE");
+        SchemeReporter.generate(config);
+
+        String html = Files.readString(directory.resolve("PUBLIC.html"));
+        assertTrue(html, html.contains("id=\"enum$BOOK_STATE\""));
+        assertTrue(html, html.contains("href=\"#enum$BOOK_STATE\""));
+    }
+
+    @Test
+    public void overviewIncludesOneEdgePerPairOfReportedTables() throws Exception {
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, "sa", "");
+             Statement statement = connection.createStatement()) {
+            statement.execute("CREATE SCHEMA archive");
+            statement.execute("CREATE TABLE archive.authors (id BIGINT PRIMARY KEY)");
+            statement.execute("CREATE TABLE archive.warehouses (id BIGINT PRIMARY KEY)");
+            statement.execute("ALTER TABLE authors ADD archived_id BIGINT REFERENCES archive.authors(id)");
+            statement.execute("ALTER TABLE books ADD warehouse_id BIGINT REFERENCES archive.warehouses(id)");
+            statement.execute("ALTER TABLE books ADD editor_id BIGINT REFERENCES authors(id)");
+        }
+        Path directory = temporary.newFolder("overview").toPath();
+        Configuration config = configuration("html", directory, null);
+        config.getDatabase().setIncludes("AUTHORS|BOOKS|WAREHOUSES");
+        SchemeReporter.generate(config);
+
+        String html = Files.readString(directory.resolve("PUBLIC.html"));
+        String overview = html.substring(html.indexOf("<svg"), html.indexOf("</svg>"));
+        assertEquals(2, overview.split("class=\"node\"", -1).length - 1);
+        assertEquals(1, overview.split("class=\"edge\"", -1).length - 1);
+        assertFalse(overview, overview.contains("WAREHOUSES"));
+    }
+
+    @Test
+    public void outputDirectoryCanBeCreatedAndReused() throws Exception {
+        File directory = new File(temporary.getRoot(), "nested/output");
+        File first = FileUtils.getOutputFile(directory.toString(), "html", "PUBLIC", null);
+        assertTrue(directory.isDirectory());
+        Files.createFile(first.toPath());
+        assertEquals(new File(directory, "PUBLIC (1).html"),
+                FileUtils.getOutputFile(directory.toString(), "html", "PUBLIC", null));
+        assertThrows(IllegalStateException.class,
+                () -> FileUtils.getOutputFile(first.toString(), "html", "PUBLIC", null));
     }
 
     @Test
@@ -84,7 +139,13 @@ public class ReportExportContractTest {
 
     @Test
     public void excelContainsForeignKeyAndColumnDescription() throws Exception {
-        try (Workbook workbook = WorkbookFactory.create(generate("excel", null).toFile())) {
+        Path output = generate("excel", null);
+        File[] descriptors = new File("/proc/self/fd").listFiles();
+        if (descriptors != null) {
+            for (File descriptor : descriptors)
+                assertNotEquals("Workbook stream is still open", output.toFile().getCanonicalFile(), descriptor.getCanonicalFile());
+        }
+        try (Workbook workbook = WorkbookFactory.create(output.toFile())) {
             Sheet tables = workbook.getSheet("tables");
             assertNotNull(tables);
             StringBuilder cells = new StringBuilder();
@@ -107,6 +168,9 @@ public class ReportExportContractTest {
             assertTrue(xml, xml.contains("BOOKS"));
             assertTrue(xml, xml.contains("AUTHOR_ID"));
             assertTrue(xml, xml.contains("Title &amp; note"));
+            assertTrue(xml, xml.contains("w:name=\"key$PK_AUTHORS\""));
+            assertTrue(xml, xml.contains("w:anchor=\"key$PK_AUTHORS\""));
+            assertTrue(xml, xml.matches("(?s).*<w:tcW(?=[^>]*w:type=\"pct\")(?=[^>]*w:w=\"750\")[^>]*>.*"));
             assertTrue(document.stream().anyMatch(entry -> entry.getName().startsWith("word/media/")));
         }
     }

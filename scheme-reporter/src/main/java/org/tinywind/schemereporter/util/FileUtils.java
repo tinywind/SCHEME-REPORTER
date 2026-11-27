@@ -14,7 +14,7 @@ public class FileUtils {
         final File path = file.getParentFile();
         if (path != null) {
             if (path.mkdirs()) log.info("created path: " + path);
-            else log.error("failed to create path: " + path);
+            else if (!path.isDirectory()) throw new IllegalStateException("Cannot create output directory: " + path);
         }
 
         return file;

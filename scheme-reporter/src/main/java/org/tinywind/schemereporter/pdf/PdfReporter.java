@@ -47,6 +47,7 @@ import org.tinywind.schemereporter.util.TableImage;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -72,10 +73,6 @@ public class PdfReporter implements Reportable {
 
     @Override
     public final void generate(SchemaDefinition schema) throws Exception {
-
-        final byte[] fontBytes = IOUtils.toByteArray(Objects.requireNonNull(getClass().getResourceAsStream("/asset/font/NanumMyeongjo.ttf")));
-        final PdfFont font = PdfFontFactory.createFont(fontBytes, PdfEncodings.IDENTITY_H);
-
         final SchemaVersionProvider schemaVersionProvider = schema.getDatabase().getSchemaVersionProvider();
         final String version = schemaVersionProvider != null ? schemaVersionProvider.version(schema) : null;
 
@@ -86,60 +83,70 @@ public class PdfReporter implements Reportable {
         final String totalRelationSvg = TableImage.totalRelationSvg(tables);
         final Map<String, String> relationSvg = TableImage.relationSvg(tables);
 
+        writeReport(file, enums, tables, totalRelationSvg, relationSvg);
+    }
+
+    void writeReport(File file, List<EnumDefinition> enums, List<TableDefinition> tables,
+                     String totalRelationSvg, Map<String, String> relationSvg) throws Exception {
+        final byte[] fontBytes;
+        try (InputStream fontStream = Objects.requireNonNull(getClass().getResourceAsStream("/asset/font/NanumMyeongjo.ttf"))) {
+            fontBytes = IOUtils.toByteArray(fontStream);
+        }
+        final PdfFont font = PdfFontFactory.createFont(fontBytes, PdfEncodings.IDENTITY_H);
+
         final PageSize PAGE_SIZE = PageSize.A4;
         final float PAGE_MARGIN = 30;
         final float MAX_WIDTH = PAGE_SIZE.getWidth() - PAGE_MARGIN * 2;
-        final float MAX_HEIGHT = PAGE_SIZE.getWidth() - PAGE_MARGIN * 2;
+        final float MAX_HEIGHT = PAGE_SIZE.getHeight() - PAGE_MARGIN * 2;
         final float svgScaleRate = 0.6f;
 
-        final PdfDocument pdf = new PdfDocument(new PdfWriter(new FileOutputStream(file)));
-        final Document document = new Document(pdf, PAGE_SIZE);
-        document.setMargins(PAGE_MARGIN, PAGE_MARGIN, PAGE_MARGIN, PAGE_MARGIN);
-        document.setFont(font);
+        try (FileOutputStream output = new FileOutputStream(file);
+             Document document = new Document(new PdfDocument(new PdfWriter(output)), PAGE_SIZE)) {
+            document.setMargins(PAGE_MARGIN, PAGE_MARGIN, PAGE_MARGIN, PAGE_MARGIN);
+            document.setFont(font);
 
-        document.add(new Paragraph(new Text("Table of contents").setFontSize(14).simulateBold()).setTextAlignment(TextAlignment.CENTER));
+            document.add(new Paragraph(new Text("Table of contents").setFontSize(14).simulateBold()).setTextAlignment(TextAlignment.CENTER));
 
-        if (!enums.isEmpty()) {
-            document.add(itemOfTableContents("Enum Definition", "Enum Definition"));
-            for (Definition e : enums)
-                document.add(leafItemOfTableContents(e.getName(), "enum$" + e.getName()));
-        }
+            if (!enums.isEmpty()) {
+                document.add(itemOfTableContents("Enum Definition", "Enum Definition"));
+                for (Definition e : enums)
+                    document.add(leafItemOfTableContents(e.getName(), "enum$" + e.getName()));
+            }
 
-        document.add(itemOfTableContents("Table Definition", "Table Definition"));
-        for (Definition e : tables)
-            document.add(leafItemOfTableContents(e.getName(), "table$" + e.getName()));
-        document.add(new AreaBreak());
-
-        if (!enums.isEmpty()) {
-            final Div divEnums = chapter("Enum Definition");
-            for (EnumDefinition e : enums)
-                divEnums.add(enumElement(e));
-            document.add(divEnums);
+            document.add(itemOfTableContents("Table Definition", "Table Definition"));
+            for (Definition e : tables)
+                document.add(leafItemOfTableContents(e.getName(), "table$" + e.getName()));
             document.add(new AreaBreak());
+
+            if (!enums.isEmpty()) {
+                final Div divEnums = chapter("Enum Definition");
+                for (EnumDefinition e : enums)
+                    divEnums.add(enumElement(e));
+                document.add(divEnums);
+                document.add(new AreaBreak());
+            }
+
+            final Div divTableOverview = chapter("Table Definition");
+            divTableOverview.add(new Paragraph().add(createImage(totalRelationSvg, svgScaleRate, MAX_WIDTH, MAX_HEIGHT)).setTextAlignment(TextAlignment.CENTER));
+            document.add(divTableOverview);
+            document.add(new AreaBreak());
+
+            for (int i = 0; i < tables.size(); i++) {
+                final TableDefinition e = tables.get(i);
+                final Div div = tableTitle(e);
+                div.add(new Paragraph().add(createImage(relationSvg.get(e.getName()), svgScaleRate, MAX_WIDTH, MAX_HEIGHT)).setTextAlignment(TextAlignment.CENTER));
+                div.add(tableDefinition(e));
+
+                if (!e.getKeys().isEmpty()) div.add(tableUniqueKey(e));
+
+                if (e.getColumns().stream().anyMatch(c -> !StringUtils.isEmpty(c.getComment())))
+                    div.add(tableColumnComments(e));
+
+                document.add(div);
+
+                if (i + 1 < tables.size()) document.add(new AreaBreak());
+            }
         }
-
-        final Div divTableOverview = chapter("Table Definition");
-        divTableOverview.add(new Paragraph().add(createImage(totalRelationSvg, svgScaleRate, MAX_WIDTH, MAX_HEIGHT)).setTextAlignment(TextAlignment.CENTER));
-        document.add(divTableOverview);
-        document.add(new AreaBreak());
-
-        for (int i = 0; i < tables.size(); i++) {
-            final TableDefinition e = tables.get(i);
-            final Div div = tableTitle(e);
-            div.add(new Paragraph().add(createImage(relationSvg.get(e.getName()), svgScaleRate, MAX_WIDTH, MAX_HEIGHT)).setTextAlignment(TextAlignment.CENTER));
-            div.add(tableDefinition(e));
-
-            if (!e.getKeys().isEmpty()) div.add(tableUniqueKey(e));
-
-            if (e.getColumns().stream().anyMatch(c -> !StringUtils.isEmpty(c.getComment())))
-                div.add(tableColumnComments(e));
-
-            document.add(div);
-
-            if (i + 1 < tables.size()) document.add(new AreaBreak());
-        }
-
-        document.close();
     }
 
     private Image createImage(String svg, float svgScaleRate, float maxWidth, float maxHeight) throws TranscoderException {

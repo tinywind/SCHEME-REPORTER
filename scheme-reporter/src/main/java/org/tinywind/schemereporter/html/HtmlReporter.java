@@ -17,6 +17,8 @@
 package org.tinywind.schemereporter.html;
 
 import org.jooq.meta.Database;
+import org.jooq.meta.Definition;
+import org.jooq.meta.EnumDefinition;
 import org.jooq.meta.SchemaDefinition;
 import org.jooq.meta.SchemaVersionProvider;
 import org.jooq.meta.TableDefinition;
@@ -33,6 +35,7 @@ import org.tinywind.schemereporter.util.FileUtils;
 
 import java.io.File;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.tinywind.schemereporter.util.TableImage.relationSvg;
 import static org.tinywind.schemereporter.util.TableImage.totalRelationSvg;
@@ -68,7 +71,9 @@ public class HtmlReporter implements Reportable {
         context.setVariable("totalRelationSvg", totalRelationSvg(tables));
         context.setVariable("relationSvg", relationSvg(tables));
         context.setVariable("database", database);
-        context.setVariable("enums", database.getEnums(schema));
+        final List<EnumDefinition> enums = database.getEnums(schema);
+        context.setVariable("enums", enums);
+        context.setVariable("enumNames", enums.stream().map(Definition::getName).collect(Collectors.toSet()));
         context.setVariable("sequences", database.getSequences(schema));
         context.setVariable("tables", tables);
 

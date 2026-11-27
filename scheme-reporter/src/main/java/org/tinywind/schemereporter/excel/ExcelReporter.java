@@ -150,7 +150,9 @@ public class ExcelReporter implements Reportable {
                 if (MAX_COLUMN_WIDTH < sheet.getColumnWidth(i)) sheet.setColumnWidth(i, MAX_COLUMN_WIDTH);
             }
 
-            workbook.write(new FileOutputStream(file));
+            try (FileOutputStream output = new FileOutputStream(file)) {
+                workbook.write(output);
+            }
         }
     }
 

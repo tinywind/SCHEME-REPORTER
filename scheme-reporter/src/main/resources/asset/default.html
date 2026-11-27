@@ -28,7 +28,8 @@
         <div th:each="enumElement, status : ${enums}">
             <div th:id="'enum$' + ${enumElement.name}" class="panel panel-default">
                 <div class="panel-heading">
-                    <h4 th:text="${enumElement.name}">
+                    <h4>
+                        <span th:text="${enumElement.name}"></span>
                         <small><i th:text="${enumElement.comment}"></i></small>
                     </h4>
                 </div>
@@ -50,7 +51,8 @@
     <div th:each="tableElement, status : ${tables}">
         <div th:id="'table$' + ${tableElement.name}" class="panel panel-default">
             <div class="panel-heading">
-                <h4 th:text="${tableElement.name}">
+                <h4>
+                    <span th:text="${tableElement.name}"></span>
                     <small><i th:text="${tableElement.comment}"></i></small>
                 </h4>
                 <div style="text-align: center;" th:utext="${relationSvg[tableElement.name]}"></div>
@@ -77,14 +79,14 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="column : ${tableElement.columns}">
+                <tr th:each="column : ${tableElement.columns}"
+                    th:with="isEnum=${enumNames.contains(column.type.userType) and tableElement.schema.equals(column.type.schema)}">
                     <td class="text-ellipsis" th:title="${column.name}" th:text="${column.name}"></td>
-                    <td th:if="${column.type.type.equals('USER-DEFINED')}"
-                        th:title="${column.type.userType}"
-                        th:onclick="'location.href=#enum' + ${column.type.userType}"
-                        role="button" class="text-ellipsis text-info"
-                        th:text="${column.type.userType}"></td>
-                    <td th:unless="${column.type.type.equals('USER-DEFINED')}"
+                    <td th:if="${isEnum or column.type.type.equals('USER-DEFINED')}"
+                        th:title="${column.type.userType}" class="text-ellipsis">
+                        <a th:href="${isEnum ? '#enum$' + column.type.userType : null}" th:text="${column.type.userType}"></a>
+                    </td>
+                    <td th:unless="${isEnum or column.type.type.equals('USER-DEFINED')}"
                         th:title="${column.type.type} + (${column.type.length} != 0 ? ' (' + ${column.type.length} + ')' : '')"
                         class="text-ellipsis"
                         th:text="${column.type.type} + (${column.type.length} != 0 ? ' (' + ${column.type.length} + ')' : '')"></td>

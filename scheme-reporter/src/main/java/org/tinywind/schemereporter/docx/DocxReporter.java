@@ -253,7 +253,7 @@ public class DocxReporter implements Reportable {
 
             if (referenced) {
                 final P p = tableText("");
-                final P.Hyperlink hyperlink = MainDocumentPart.hyperlinkToBookmark(fkey.getReferencedKey().getName(), text.toString());
+                final P.Hyperlink hyperlink = MainDocumentPart.hyperlinkToBookmark("key$" + fkey.getReferencedKey().getName(), text.toString());
                 setTextSize(hyperlink);
                 p.getContent().add(hyperlink);
                 tc.getContent().add(p);
@@ -312,7 +312,7 @@ public class DocxReporter implements Reportable {
     private void setTableCellWidthPercent(Tc tc, int percent) {
         final TcPr tcPr = tc.getTcPr();
         final TblWidth tblWidth = factory.createTblWidth();
-        tblWidth.setW(BigInteger.valueOf(percent));
+        tblWidth.setW(BigInteger.valueOf(percent * 50L));
         tblWidth.setType("pct");
         tcPr.setTcW(tblWidth);
     }
