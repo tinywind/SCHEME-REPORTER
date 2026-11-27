@@ -20,11 +20,36 @@ import org.junit.Test;
 import org.tinywind.schemereporter.sample.Creator;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.Assert.*;
 
 /**
  * @author tinywind
  */
 public class LauncherTest {
+
+    @Test
+    public void releasesInvalidConfigurationFile() throws Exception {
+        Path config = Files.createTempFile(Path.of("target"), "invalid-", ".xml").toRealPath();
+        try {
+            Files.writeString(config, "<configuration/>");
+            assertThrows(IOException.class, () -> Launcher.main(new String[]{config.toString()}));
+            Path descriptors = Path.of("/proc/self/fd");
+            if (Files.isDirectory(descriptors)) {
+                try (var entries = Files.list(descriptors)) {
+                    for (Path descriptor : entries.toList()) {
+                        assertFalse("Configuration file is still open", descriptor.toFile().exists()
+                                && Files.isSameFile(descriptor, config));
+                    }
+                }
+            }
+        } finally {
+            Files.delete(config);
+        }
+    }
 
     @Test
     public void test() throws Exception {

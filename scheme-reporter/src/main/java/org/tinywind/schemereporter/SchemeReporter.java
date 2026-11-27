@@ -19,12 +19,12 @@ package org.tinywind.schemereporter;
 import jakarta.xml.bind.JAXBContext;
 import jakarta.xml.bind.Unmarshaller;
 import jakarta.xml.bind.annotation.XmlElement;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.jooq.meta.Databases;
 import org.jooq.meta.SchemaDefinition;
 import org.jooq.meta.jaxb.CatalogMappingType;
 import org.jooq.meta.jaxb.SchemaMappingType;
 import org.jooq.tools.JooqLogger;
-import org.jooq.tools.StringUtils;
 import org.jooq.tools.jdbc.JDBCUtils;
 import org.tinywind.schemereporter.jaxb.Configuration;
 import org.tinywind.schemereporter.jaxb.Database;
@@ -32,7 +32,11 @@ import org.tinywind.schemereporter.jaxb.Generator;
 import org.tinywind.schemereporter.jaxb.Jdbc;
 
 import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.validation.SchemaFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import java.io.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -56,6 +60,7 @@ public class SchemeReporter {
             exit(-1);
         }
 
+        boolean failed = false;
         for (String arg : args) {
             InputStream in = SchemeReporter.class.getResourceAsStream(arg);
             try {
@@ -69,6 +74,7 @@ public class SchemeReporter {
                     log.error("Please be sure it is located");
                     log.error("  - on the classpath and qualified as a classpath location.");
                     log.error("  - in the local directory or at a global path in the file system.");
+                    failed = true;
                     continue;
                 }
 
@@ -77,6 +83,7 @@ public class SchemeReporter {
                 final Configuration configuration = load(in);
                 generate(configuration);
             } catch (Exception e) {
+                failed = true;
                 log.error("Cannot read " + arg + ". Error : " + e.getMessage(), e);
             } finally {
                 if (in != null) {
@@ -87,6 +94,7 @@ public class SchemeReporter {
                 }
             }
         }
+        if (failed) exit(1);
         log.info("complete");
     }
 
@@ -97,11 +105,13 @@ public class SchemeReporter {
     }
 
     public static boolean isCorrected(Configuration configuration) {
+        if (configuration == null) return false;
         final Jdbc jdbc = configuration.getJdbc();
         final Database database = configuration.getDatabase();
         if (isNull(jdbc, database)) return false;
 
-        return !isNull(jdbc.getDriverClass(), database.getUrl(), database.getUser(), database.getPassword());
+        return !isNull(jdbc.getDriverClass(), database.getUrl(), database.getUser(), database.getPassword())
+                && !jdbc.getDriverClass().isBlank() && !database.getUrl().isBlank();
     }
 
     private static void setDefault(Object o, String fieldName) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
@@ -135,14 +145,9 @@ public class SchemeReporter {
 
     public static void generate(Configuration configuration, JdbcClassExtractor jdbcClassExtractor) throws Exception {
         if (!isCorrected(configuration)) {
-            log.error("Incorrect xml");
-            return;
+            throw new IllegalArgumentException("Configuration requires jdbc.driverClass, database.url, database.user and database.password");
         }
-        try {
-            setDefault(configuration);
-        } catch (NoSuchFieldException e) {
-            log.error("Incorrect xml", e);
-        }
+        setDefault(configuration);
 
         final Class<? extends Driver> driverClass = jdbcClassExtractor.extract(configuration);
         final Properties properties = new Properties();
@@ -150,8 +155,16 @@ public class SchemeReporter {
         properties.put("user", databaseConfig.getUser());
         properties.put("password", databaseConfig.getPassword());
 
-        final Connection connection = driverClass.newInstance().connect(databaseConfig.getUrl(), properties);
-        final org.jooq.meta.Database database = Databases.databaseClass(JDBCUtils.dialect(databaseConfig.getUrl())).newInstance();
+        try (Connection connection = driverClass.getDeclaredConstructor().newInstance().connect(databaseConfig.getUrl(), properties);
+             org.jooq.meta.Database database = Databases.databaseClass(JDBCUtils.dialect(databaseConfig.getUrl())).getDeclaredConstructor().newInstance()) {
+            if (connection == null) throw new IllegalArgumentException("JDBC driver does not accept the configured URL");
+            database.setConnection(connection);
+            generate(configuration, database);
+        }
+    }
+
+    private static void generate(Configuration configuration, org.jooq.meta.Database database) throws Exception {
+        final Database databaseConfig = configuration.getDatabase();
 
         final CatalogMappingType catalog = new CatalogMappingType();
         catalog.setInputCatalog("");
@@ -159,8 +172,6 @@ public class SchemeReporter {
         catalog.setOutputCatalogToDefault(false);
         catalog.setSchemata(Collections.singletonList(new SchemaMappingType()));
 
-        database.setConnection(connection);
-        database.setConfiguredCatalogs(Collections.singletonList(new CatalogMappingType()));
         database.setConfiguredCatalogs(Collections.singletonList(catalog));
         database.setConfiguredSchemata(new ArrayList<>());
         database.setConfiguredEnumTypes(new ArrayList<>());
@@ -194,46 +205,56 @@ public class SchemeReporter {
 
         @SuppressWarnings("unchecked") final Class<? extends Reportable> reporterClass = (Class<? extends Reportable>) Class.forName(generator.getReporterClass());
         final Reportable reporter = reporterClass.getConstructor().newInstance();
-        reporter.setDatabase(database);
-        reporter.setGenerator(generator);
+        try (Closeable resource = reporter instanceof Closeable closeable ? closeable : null) {
+            reporter.setDatabase(database);
+            reporter.setGenerator(generator);
 
-        final List<String> inputSchemaNames = databaseConfig.getInputSchema() != null ? Arrays.asList(databaseConfig.getInputSchema().toLowerCase().split("[|]")) : null;
-        for (SchemaDefinition schemaDefinition : database.getSchemata()) {
-            if (inputSchemaNames != null && !inputSchemaNames.contains(schemaDefinition.getName().toLowerCase()) && !inputSchemaNames.contains(schemaDefinition.getOutputName().toLowerCase()))
-                continue;
+            final List<String> inputSchemaNames = databaseConfig.getInputSchema() != null ? Arrays.asList(databaseConfig.getInputSchema().toLowerCase().split("[|]")) : null;
+            for (SchemaDefinition schemaDefinition : database.getSchemata()) {
+                if (inputSchemaNames != null && !inputSchemaNames.contains(schemaDefinition.getName().toLowerCase()) && !inputSchemaNames.contains(schemaDefinition.getOutputName().toLowerCase()))
+                    continue;
 
-            try {
-                reporter.generate(schemaDefinition);
-            } catch (Exception e) {
-                throw new RuntimeException("Error generating code for schema " + schemaDefinition, e);
+                try {
+                    reporter.generate(schemaDefinition);
+                } catch (Exception e) {
+                    throw new RuntimeException("Error generating code for schema " + schemaDefinition, e);
+                }
             }
         }
-
-        if (reporter instanceof Closeable) ((Closeable) reporter).close();
     }
 
     public static Configuration load(InputStream in) throws IOException {
-        final byte[] buffer = new byte[1000 * 1000];
-        final ByteArrayOutputStream out = new ByteArrayOutputStream();
-        for (int len; (len = in.read(buffer)) >= 0; )
-            out.write(buffer, 0, len);
-
-        final String xml = out.toString().replaceAll("<(\\w+:)?configuration\\s+xmlns(:\\w+)?=\"[^\"]*\"[^>]*>", "<$1configuration xmlns$2=\"" + REPO_SCHEME_REPORTER_XSD + "\">").replace("<configuration>", "<configuration xmlns=\"" + REPO_SCHEME_REPORTER_XSD + "\">");
         try {
-            out.close();
-        } catch (IOException e) {
-            log.error("Error while closing outputStream", e);
-        }
+            final DocumentBuilderFactory parser = DocumentBuilderFactory.newDefaultNSInstance();
+            parser.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+            parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            parser.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            parser.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            final Document document = parser.newDocumentBuilder().parse(CloseShieldInputStream.wrap(in));
+            final Element root = document.getDocumentElement();
+            if (!REPO_SCHEME_REPORTER_XSD.equals(root.getNamespaceURI())) {
+                useConfigurationNamespace(document, root.getNamespaceURI());
+            }
 
-        try {
             final SchemaFactory sf = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-            final JAXBContext ctx = JAXBContext.newInstance(Configuration.class);
-            final Unmarshaller unmarshaller = ctx.createUnmarshaller();
+            sf.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            sf.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            final Unmarshaller unmarshaller = JAXBContext.newInstance(Configuration.class).createUnmarshaller();
             unmarshaller.setSchema(sf.newSchema(SchemeReporter.class.getResource("/xsd/" + SCHEME_REPORTER_XSD)));
-            unmarshaller.setEventHandler(event -> true);
-            return (Configuration) unmarshaller.unmarshal(new StringReader(xml));
+            unmarshaller.setEventHandler(event -> false);
+            return (Configuration) unmarshaller.unmarshal(document);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new IOException("Invalid scheme reporter configuration", e);
+        }
+    }
+
+    private static void useConfigurationNamespace(Document document, String originalNamespace) {
+        NodeList matches = document.getElementsByTagNameNS(originalNamespace, "*");
+        // Renaming nodes changes the live NodeList.
+        List<Element> elements = new ArrayList<>(matches.getLength());
+        for (int i = 0; i < matches.getLength(); i++) elements.add((Element) matches.item(i));
+        for (Element element : elements) {
+            document.renameNode(element, REPO_SCHEME_REPORTER_XSD, element.getNodeName());
         }
     }
 }

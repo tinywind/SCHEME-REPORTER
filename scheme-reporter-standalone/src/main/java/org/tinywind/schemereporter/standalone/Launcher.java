@@ -48,7 +48,10 @@ public class Launcher {
             exit(-1);
         }
 
-        final Configuration configuration = SchemeReporter.load(new FileInputStream(configFile));
+        final Configuration configuration;
+        try (FileInputStream input = new FileInputStream(configFile)) {
+            configuration = SchemeReporter.load(input);
+        }
 
         if (args.length > 1) {
             final File jdbcJar = new File(args[1]);

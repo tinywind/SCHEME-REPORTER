@@ -9,7 +9,7 @@
             <all>
                 <element name="jdbc" type="tns:Jdbc"/>
                 <element name="database" type="tns:Database"/>
-                <element name="generator" type="tns:Generator"/>
+                <element name="generator" type="tns:Generator" minOccurs="0"/>
             </all>
         </complexType>
     </element>

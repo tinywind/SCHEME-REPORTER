@@ -41,4 +41,4 @@ The explicit CodeQL workflow compiles the Maven reactor and both Gradle plugin s
 
 The compatibility checks cover actual HTML, PDF, XLSX, and DOCX exports from disposable H2 schemas, report contents and relationship images, custom HTML templates, XML configuration, JDBC driver loading, a Derby export on each supported test JDK, packaged CLI usage and its JDBC JAR argument, the Maven generate goal and skip option, and the Gradle consumer task. External database server connections and publication are outside these checks.
 
-The existing Maven goal logs report-generation failures and returns normally, so a Maven exit code of zero alone does not prove that a report was created. Negative checks must inspect the diagnostic and confirm that no report was produced.
+The Maven generate goal now fails the build when the configuration is invalid or report generation throws. The skip option still completes without generating a report. XML configuration is validated against the bundled schema and rejects document type declarations.
