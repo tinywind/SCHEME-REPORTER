@@ -9,6 +9,9 @@ import com.itextpdf.kernel.pdf.canvas.parser.PdfTextExtractor
 import org.junit.After
 import org.junit.AfterClass
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.BeforeClass
@@ -17,29 +20,29 @@ import org.junit.runner.RunWith
 import org.junit.runners.Parameterized
 import org.tinywind.schemereporter.sample.Creator
 import java.io.File
+import java.net.URLClassLoader
 import java.nio.file.Files
+import java.util.jar.JarOutputStream
+import java.util.jar.JarEntry
 
 @RunWith(Parameterized::class)
 class SchemeReporterPluginFunctionalTest(
     private val gradleVersion: String,
     private val javaHome: String,
-    private val label: String,
+    private val javaVersion: Int,
 ) {
 
     companion object {
-        private val sdkmanDir = System.getenv("SDKMAN_DIR")
-            ?: "${System.getProperty("user.home")}/.sdkman"
-
         private lateinit var h2Server: Server
         private var h2Port: Int = 0
 
-        private fun jdkPath(prefix: String): String? {
-            val candidates = File("$sdkmanDir/candidates/java")
-            if (!candidates.exists()) return null
-            return candidates.listFiles()
-                ?.filter { it.isDirectory && it.name != "current" && it.name.startsWith(prefix) }
-                ?.maxByOrNull { it.name }
-                ?.absolutePath
+        private fun javaVersion(home: File): Int? {
+            val release = File(home, "release")
+            if (!release.isFile) return null
+            val properties = java.util.Properties()
+            release.inputStream().use { properties.load(it) }
+            return properties.getProperty("JAVA_VERSION")?.trim('"')
+                ?.takeWhile { it.isDigit() }?.toIntOrNull()
         }
 
         @JvmStatic
@@ -47,7 +50,7 @@ class SchemeReporterPluginFunctionalTest(
         fun startH2() {
             Creator.create()
 
-            h2Server = Server.createTcpServer("-tcpPort", "0", "-tcpAllowOthers").start()
+            h2Server = Server.createTcpServer("-tcpPort", "0").start()
             h2Port = h2Server.port
         }
 
@@ -58,22 +61,25 @@ class SchemeReporterPluginFunctionalTest(
         }
 
         @JvmStatic
-        @Parameterized.Parameters(name = "{2}")
+        @Parameterized.Parameters(name = "Gradle {0} + JDK {2}")
         fun parameters(): Collection<Array<Any>> {
+            val requestedHome = System.getenv("SCHEME_REPORTER_TEST_JAVA_HOME")
+            val homes = if (requestedHome != null) {
+                listOf(File(requestedHome))
+            } else {
+                val sdkman = System.getenv("SDKMAN_DIR") ?: "${System.getProperty("user.home")}/.sdkman"
+                listOfNotNull(
+                    System.getProperty("java.home"), System.getenv("JAVA_HOME"),
+                    System.getenv("JAVA21_HOME"), System.getenv("JAVA25_HOME"),
+                ).map(::File) + File(sdkman, "candidates/java").listFiles().orEmpty().sortedByDescending { it.name }
+            }
             val params = mutableListOf<Array<Any>>()
-
-            val jdk21 = jdkPath("21")
-            val jdk25 = jdkPath("25")
-
-            if (jdk21 != null) {
-                params.add(arrayOf("8.6", jdk21, "Gradle 8.6 + JDK 21"))
-                params.add(arrayOf("9.9.1", jdk21, "Gradle 9.9.1 + JDK 21"))
+            for (version in listOf(21, 25)) {
+                val home = homes.firstOrNull { javaVersion(it) == version } ?: continue
+                val gradleVersions = if (version == 21) listOf("8.6", "9.9.1") else listOf("9.9.1")
+                for (gradle in gradleVersions) params.add(arrayOf(gradle, home.absolutePath, version))
             }
-            if (jdk25 != null) {
-                params.add(arrayOf("9.9.1", jdk25, "Gradle 9.9.1 + JDK 25"))
-            }
-
-            require(params.isNotEmpty()) { "No JDK found. Install JDK 21 or 25 via SDKMAN." }
+            require(params.isNotEmpty()) { "Provide a JDK 21 or 25 installation via SCHEME_REPORTER_TEST_JAVA_HOME." }
             return params
         }
     }
@@ -83,15 +89,18 @@ class SchemeReporterPluginFunctionalTest(
 
     @Before
     fun setup() {
-        projectDir = Files.createTempDirectory("scheme-reporter-test-").toFile()
+        val scratch = Files.createDirectories(File("../.tmp").toPath().toAbsolutePath().normalize())
+        projectDir = Files.createTempDirectory(scratch, "scheme-reporter-test-").toFile()
         outputDir = File(projectDir, "build/reports/schema")
 
         File(projectDir, "settings.gradle.kts").writeText(
             "rootProject.name = \"scheme-reporter-test\"\n"
         )
 
+        File(projectDir, "gradle.properties").writeText(
+            "org.gradle.java.home=${File(javaHome).invariantSeparatorsPath}\norg.gradle.jvmargs=-Xmx1g\nh2Port=$h2Port\n"
+        )
         val pluginClasspath = buildPluginClasspath()
-        val escapedOutputDir = outputDir.absolutePath.replace("\\", "/")
 
         File(projectDir, "build.gradle.kts").writeText(
             """
@@ -106,6 +115,7 @@ class SchemeReporterPluginFunctionalTest(
             }
 
             apply(plugin = "org.tinywind.scheme-reporter")
+            check(Runtime.version().feature() == $javaVersion) { "Unexpected consumer JDK: ${'$'}{Runtime.version()}" }
             check(java.io.ObjectInputFilter.Config.getSerialFilter() != null) { "Missing build serialization filter" }
 
             repositories {
@@ -122,15 +132,15 @@ class SchemeReporterPluginFunctionalTest(
                     driverClass = "org.h2.Driver"
                 }
                 database {
-                    url = "jdbc:h2:tcp://localhost:$h2Port/mem:test"
+                    url = "jdbc:h2:tcp://localhost:${'$'}{providers.gradleProperty("h2Port").get()}/mem:test"
                     user = "sa"
                     password = ""
-                    includes = ".*"
+                    includes = "PUBLIC_FILE"
                     inputSchema = "PUBLIC"
                 }
                 generator {
-                    reporterClass = "org.tinywind.schemereporter.pdf.PdfReporter"
-                    outputDirectory = "$escapedOutputDir"
+                    providers.gradleProperty("reportFormat").orNull?.let { reporterClass = it }
+                    outputDirectory = layout.buildDirectory.dir("reports/schema").get().asFile.absolutePath
                 }
             }
             """.trimIndent()
@@ -142,11 +152,10 @@ class SchemeReporterPluginFunctionalTest(
         projectDir.deleteRecursively()
     }
 
-    @Test
-    fun `generateSchemeReport task succeeds`() {
-        val result = GradleRunner.create()
+    private fun runner(vararg options: String): GradleRunner =
+        GradleRunner.create()
             .withProjectDir(projectDir)
-            .withArguments("generateSchemeReport", "--stacktrace")
+            .withArguments("generateSchemeReport", "--stacktrace", *options)
             .withGradleVersion(gradleVersion)
             .withEnvironment(
                 System.getenv().toMutableMap().apply {
@@ -158,14 +167,20 @@ class SchemeReporterPluginFunctionalTest(
                 }
             )
             .forwardOutput()
-            .build()
+
+    private fun generate(vararg options: String) {
+        val result = runner(*options).build()
 
         assertEquals(
-            "Task should succeed with $label",
+            "Task should succeed with Gradle $gradleVersion on JDK $javaVersion",
             TaskOutcome.SUCCESS,
             result.task(":generateSchemeReport")?.outcome,
         )
-        assertTrue("Output directory should exist", outputDir.exists())
+    }
+
+    @Test
+    fun `default format generates a PDF report`() {
+        generate()
 
         val pdfFiles = outputDir.listFiles()?.filter { it.extension == "pdf" } ?: emptyList()
         assertTrue("At least one PDF report should be generated", pdfFiles.isNotEmpty())
@@ -176,6 +191,50 @@ class SchemeReporterPluginFunctionalTest(
             }
             assertTrue("Report should describe the actual sample table", text.contains("PUBLIC_FILE"))
         }
+    }
+
+    @Test
+    fun `HTML alias and class name generate HTML reports`() {
+        for (format in listOf("html", "org.tinywind.schemereporter.html.HtmlReporter")) {
+            generate("-PreportFormat=$format")
+            val report = outputDir.listFiles().orEmpty().single { it.extension == "html" }
+            assertTrue("HTML report for $format should describe the sample table", report.readText().contains("PUBLIC_FILE"))
+            assertTrue("Remove report before checking the next format", report.delete())
+        }
+    }
+
+    @Test
+    fun `driver class loader releases its JAR on success and failure`() {
+        val marker = File(projectDir, "private-driver.jar")
+        val resource = "driver-lifecycle.marker"
+        JarOutputStream(marker.outputStream()).use { jar ->
+            jar.putNextEntry(JarEntry(resource))
+            jar.closeEntry()
+        }
+
+        lateinit var owner: URLClassLoader
+        fun openMarker(loader: URLClassLoader) {
+            owner = loader
+            assertNotNull(loader.findResource(resource))
+        }
+
+        withDriverClassLoader(listOf(marker), ::openMarker)
+        assertNull(owner.findResource(resource))
+        val failure = IllegalStateException("generation failed")
+        val thrown = assertThrows(IllegalStateException::class.java) {
+            withDriverClassLoader(listOf(marker)) { loader ->
+                openMarker(loader)
+                throw failure
+            }
+        }
+        assertEquals(failure, thrown)
+        assertNull(owner.findResource(resource))
+
+        val descriptors = File("/proc/self/fd")
+        if (descriptors.isDirectory) {
+            assertTrue(descriptors.listFiles()!!.none { it.canonicalFile == marker.canonicalFile })
+        }
+        assertTrue("Cannot delete the JDBC driver JAR", marker.delete())
     }
 
     private fun buildPluginClasspath(): List<String> {

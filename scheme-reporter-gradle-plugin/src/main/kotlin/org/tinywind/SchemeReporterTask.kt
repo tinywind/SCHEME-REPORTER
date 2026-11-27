@@ -8,6 +8,7 @@ import org.gradle.api.tasks.TaskAction
 import org.gradle.work.DisableCachingByDefault
 import org.tinywind.schemereporter.SchemeReporter
 import org.tinywind.schemereporter.jaxb.Configuration
+import java.io.File
 import java.net.URLClassLoader
 import java.sql.Driver
 import javax.inject.Inject
@@ -20,20 +21,10 @@ abstract class SchemeReporterTask @Inject constructor(
     private val runtimeClasspath: FileCollection,
 ) : DefaultTask() {
 
-    @Suppress("UNCHECKED_CAST")
-    private fun getDriverClass(driverClass: String): Class<out Driver> {
-        val loader = URLClassLoader(runtimeClasspath.map { it.toURI().toURL() }.toTypedArray())
-        loader.loadClass(driverClass).let {
-            if (Driver::class.java.isAssignableFrom(it)) return it as Class<out Driver>
-        }
-        throw RuntimeException("Driver class not found")
-    }
-
     @TaskAction
     fun run() {
-        if (extension.generator.reporterClass.isNullOrBlank() || extension.generator.reporterClass == "org.tinywind.schemereporter.html.HtmlReporter") {
-            logger.lifecycle("reporterClass: org.tinywind.schemereporter.html.HtmlReporter is not supported")
-            extension.generator.reporterClass = "org.tinywind.schemereporter.pdf.PdfReporter"
+        if (extension.generator.reporterClass.isNullOrBlank()) {
+            extension.generator.reporterClass = "pdf"
         }
 
         val configuration = Configuration().apply {
@@ -41,6 +32,15 @@ abstract class SchemeReporterTask @Inject constructor(
             database = extension.database
             generator = extension.generator
         }
-        SchemeReporter.generate(configuration) { config -> getDriverClass(config.jdbc.driverClass) }
+        withDriverClassLoader(runtimeClasspath) { loader ->
+            SchemeReporter.generate(configuration) { config ->
+                loader.loadClass(config.jdbc.driverClass).asSubclass(Driver::class.java)
+            }
+        }
     }
+}
+
+internal fun withDriverClassLoader(classpath: Iterable<File>, generate: (URLClassLoader) -> Unit) {
+    val urls = classpath.map { it.toURI().toURL() }.toTypedArray()
+    URLClassLoader(urls).use(generate)
 }

@@ -7,7 +7,7 @@ import org.tinywind.schemereporter.jaxb.Jdbc
 open class SchemeReporterExtension {
     var jdbc: Jdbc = Jdbc()
     var database: Database = Database()
-    var generator: Generator = Generator()
+    var generator: Generator = Generator().withReporterClass("pdf")
 
     fun jdbc(action: Jdbc.() -> Unit) {
         jdbc.apply(action)

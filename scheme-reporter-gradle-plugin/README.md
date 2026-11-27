@@ -49,6 +49,8 @@ schemaReporter {
 }
 ```
 
+When Graphviz `dot` is unavailable, the JavaScript renderer shares the Gradle daemon heap. The compatibility tests use `org.gradle.jvmargs=-Xmx1g` in the consumer’s `gradle.properties` for repeated exports.
+
 ### Configuration reference
 
 - **jdbc**
@@ -61,7 +63,7 @@ schemaReporter {
     - `excludes` - Regex pattern for tables to exclude (e.g. `flyway_schema_history`)
     - `inputSchema` - Target schema name
 - **generator**
-    - `reporterClass` - Report format: `pdf`, `docx`, `excel`, `html`, or a fully qualified class name implementing the `Reportable` interface
+    - `reporterClass` - Report format: `pdf`, `docx`, `excel`, `html`, or the fully qualified name of a class that implements `Reportable`. The Gradle plugin defaults to `pdf`.
     - `template` - (Optional) Thymeleaf template file path for the HTML reporter. Uses the default template if not set
     - `outputDirectory` - Directory where the generated reports will be saved
 
