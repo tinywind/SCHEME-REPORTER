@@ -1,0 +1,75 @@
+# Orca worktree lifecycle hooks (only used when opened in Orca).
+scripts:
+  setup: |
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    version_sort() {
+      if sort -V </dev/null >/dev/null 2>&1; then
+        LC_ALL=C sort -V
+      else
+        LC_ALL=C sort
+      fi
+    }
+
+    resolve_mvn() {
+      if [[ -x ./mvnw ]]; then
+        printf '%s\n' "./mvnw"
+        return 0
+      fi
+      if command -v mvn >/dev/null 2>&1; then
+        command -v mvn
+        return 0
+      fi
+      if [[ -n "${MAVEN_HOME:-}" && -x "${MAVEN_HOME}/bin/mvn" ]]; then
+        printf '%s\n' "${MAVEN_HOME}/bin/mvn"
+        return 0
+      fi
+      if [[ -d "${HOME}/.m2/wrapper/dists" ]]; then
+        local cached_mvn
+        cached_mvn="$(find "${HOME}/.m2/wrapper/dists" -maxdepth 4 -type f -path '*/apache-maven-3.*/bin/mvn' -perm -100 2>/dev/null | version_sort | tail -n 1 || true)"
+        if [[ -n "$cached_mvn" ]]; then
+          printf '%s\n' "$cached_mvn"
+          return 0
+        fi
+      fi
+      return 1
+    }
+
+    resolve_jdk21() {
+      local candidate
+      for candidate in \
+        "${JAVA_HOME:-}" \
+        "${HOME}"/.sdkman/candidates/java/21* \
+        /usr/lib/jvm/java-21* \
+        /usr/lib/jvm/temurin-21* \
+        /Library/Java/JavaVirtualMachines/*21*/Contents/Home; do
+        if [[ -n "$candidate" && -x "$candidate/bin/java" ]]; then
+          if "$candidate/bin/java" -version 2>&1 | grep -Eq 'version "21(\.|")'; then
+            printf '%s\n' "$candidate"
+            return 0
+          fi
+        fi
+      done
+      return 1
+    }
+
+    mvn_cmd="$(resolve_mvn || true)"
+    if [[ -z "$mvn_cmd" ]]; then
+      printf '%s\n' "Maven 3.10+ (mvn) was not found on PATH, MAVEN_HOME, or ~/.m2/wrapper/dists." >&2
+      exit 1
+    fi
+
+    "$mvn_cmd" -B -ntp -DskipTests -Dgpg.skip=true install
+
+    if jdk21_home="$(resolve_jdk21 || true)" && [[ -n "$jdk21_home" ]]; then
+      (
+        cd scheme-reporter-gradle-plugin
+        JAVA_HOME="$jdk21_home" ./gradlew --max-workers=2 classes testClasses
+      )
+    else
+      (
+        cd scheme-reporter-gradle-plugin
+        ./gradlew --max-workers=2 classes testClasses
+      )
+    fi
