@@ -2,12 +2,52 @@ name: Dependency compatibility
 
 on:
   pull_request:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
+  linux-contracts:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ["21", "25"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Install JDK 21 for the Gradle plugin build
+        id: plugin-jdk
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Select the Maven and Gradle consumer JDK
+        id: consumer-jdk
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - name: Run Maven reactor contracts and install local artifacts
+        run: mvn -B -ntp -Dgpg.skip=true clean install
+      - name: Run Gradle consumer contracts
+        working-directory: scheme-reporter-gradle-plugin
+        env:
+          JAVA_HOME: ${{ steps.plugin-jdk.outputs.path }}
+          SCHEME_REPORTER_TEST_JAVA_HOME: ${{ steps.consumer-jdk.outputs.path }}
+        run: ./gradlew --max-workers=2 clean jar test --tests org.tinywind.SchemeReporterPluginFunctionalTest
+      - name: Assemble the standalone distribution
+        if: matrix.java == '21'
+        working-directory: scheme-reporter-standalone
+        run: mvn -B -ntp -DskipTests package assembly:single
+      - name: Check release JAR contents
+        if: matrix.java == '21'
+        run: python3 .github/scripts/check-package-contents.py
+
   windows-serialization-guard:
     runs-on: windows-latest
     steps:
